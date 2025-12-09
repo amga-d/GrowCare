@@ -2,7 +2,6 @@ package com.example.mobileappdev.screens.auth.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,7 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
@@ -30,11 +29,21 @@ import androidx.compose.ui.unit.sp
 import com.example.mobileappdev.R
 
 @Composable
-fun HomeScreen(onNavigateToFertilizer: () -> Unit = {}) {
+fun HomeScreen(
+    onNavigateToFertilizer: () -> Unit = {},
+    onNavigateToSeedScan: () -> Unit = {},
+    onNavigateToChat: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
+) {
     val scrollState = rememberScrollState()
 
     Scaffold(
-        bottomBar = { BottomNavigationBar() },
+        bottomBar = { 
+            BottomNavigationBar(
+                onChatClick = onNavigateToChat,
+                onProfileClick = onNavigateToProfile
+            ) 
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { /* TODO: Handle Scan */ },
@@ -65,7 +74,10 @@ fun HomeScreen(onNavigateToFertilizer: () -> Unit = {}) {
             WeatherCard()
 
             // 3. Quick Actions Section
-            QuickActionsSection(onFertilizerClick = onNavigateToFertilizer)
+            QuickActionsSection(
+                onFertilizerClick = onNavigateToFertilizer,
+                onSeedScanClick = onNavigateToSeedScan
+            )
 
             // 4. Crop Health Summary Section
             CropHealthSummarySection()
@@ -198,7 +210,10 @@ fun WeatherCard() {
 }
 
 @Composable
-fun QuickActionsSection(onFertilizerClick: () -> Unit) {
+fun QuickActionsSection(
+    onFertilizerClick: () -> Unit,
+    onSeedScanClick: () -> Unit
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Quick Actions",
@@ -223,7 +238,8 @@ fun QuickActionsSection(onFertilizerClick: () -> Unit) {
                 title = "Seeding Quality",
                 subtitle = "Assess the quality of your seeds",
                 icon = Icons.Default.Eco, // Icon seedling/plant
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = onSeedScanClick
             )
         }
 
@@ -379,7 +395,10 @@ fun CropHealthSummarySection() {
 }
 
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(
+    onChatClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
+) {
     NavigationBar(
         containerColor = Color.White,
         tonalElevation = 8.dp
@@ -396,10 +415,10 @@ fun BottomNavigationBar() {
             )
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Outlined.Chat, contentDescription = "Chat AI") },
+            icon = { Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = "Chat AI") },
             label = { Text("Chat AI") },
             selected = false,
-            onClick = { /* TODO */ },
+            onClick = onChatClick,
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = Color.Gray,
                 unselectedTextColor = Color.Gray
@@ -409,7 +428,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
             label = { Text("Profile") },
             selected = false,
-            onClick = { /* TODO */ },
+            onClick = onProfileClick,
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = Color.Gray,
                 unselectedTextColor = Color.Gray
