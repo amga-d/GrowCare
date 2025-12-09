@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "548326562056",
+    "project_id": "growcare-e962d",
+    "storage_bucket": "growcare-e962d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:548326562056:android:a234e6e587bbc0a0f5f4bd",
+        "android_client_info": {
+          "package_name": "com.example.growCare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "548326562056-v6jop4na3too5vv229ttooa3rp27tjpp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYlaQHA80sjrVormFEYtl-ctdOxRceN_U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "548326562056-v6jop4na3too5vv229ttooa3rp27tjpp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
