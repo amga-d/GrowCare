@@ -32,28 +32,49 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.growCare.presentation.screens.auth.AuthViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateToSignUp: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {}
+    onNavigateToHome: () -> Unit = {},
+    viewModel: com.example.growCare.presentation.screens.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
-
     val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF0FDF4)) // Hijau muda keputihan
-            .padding(horizontal = 24.dp, vertical = 32.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Ilustrasi Header
-        Icon(
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is com.example.growCare.presentation.screens.auth.AuthEvent.NavigateToHome -> onNavigateToHome()
+                is com.example.growCare.presentation.screens.auth.AuthEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF0FDF4))
+                .padding(padding)
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Ilustrasi Header
+            Icon(
             imageVector = Icons.Default.Person,
             contentDescription = "Sign In Illustration",
             modifier = Modifier
@@ -81,96 +102,123 @@ fun LoginScreen(
             textAlign = TextAlign.Center
         )
 
-        // Input Field - Username
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("User name") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 32.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                disabledContainerColor = Color.White,
-                focusedBorderColor = Color(0xFF4ADE80), // Hijau saat focused
-                unfocusedBorderColor = Color(0xFFE5E7EB) // Abu-abu muda saat idle
-            ),
-            singleLine = true
-        )
+            // Input Field - Email
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = { viewModel.onAction(com.example.growCare.presentation.screens.auth.AuthAction.UpdateEmail(it)) },
+                label = { Text("Email Address") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    focusedBorderColor = Color(0xFF4ADE80),
+                    unfocusedBorderColor = Color(0xFFE5E7EB)
+                ),
+                singleLine = true,
+                enabled = !uiState.isLoading,
+                isError = uiState.error?.contains("email", ignoreCase = true) == true
+            )
 
-        // Input Field - Password
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-            trailingIcon = {
-                val image = if (passwordVisible)
-                    Icons.Filled.Visibility
-                else
-                    Icons.Filled.VisibilityOff
+            // Input Field - Password
+            OutlinedTextField(
+                value = uiState.password,
+                onValueChange = { viewModel.onAction(com.example.growCare.presentation.screens.auth.AuthAction.UpdatePassword(it)) },
+                label = { Text("Password") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Visibility
+                    else
+                        Icons.Filled.VisibilityOff
 
-                val description = if (passwordVisible) "Hide password" else "Show password"
+                    val description = if (passwordVisible) "Hide password" else "Show password"
 
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, description)
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, description)
+                    }
+                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
+                    focusedBorderColor = Color(0xFF4ADE80),
+                    unfocusedBorderColor = Color(0xFFE5E7EB)
+                ),
+                singleLine = true,
+                enabled = !uiState.isLoading,
+                isError = uiState.error?.contains("password", ignoreCase = true) == true
+            )
+
+            // Error message
+            if (uiState.error != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uiState.error!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Forget Password Link
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Text(
+                    text = "Forget password",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF2563EB),
+                    modifier = Modifier.clickable { 
+                        if (!uiState.isLoading) {
+                            /* TODO: Handle forget password */
+                        }
+                    }
+                )
+            }
+
+            // Login Button
+            Button(
+                onClick = { viewModel.onAction(com.example.growCare.presentation.screens.auth.AuthAction.SignIn) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4ADE80),
+                    contentColor = Color.White
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                enabled = !uiState.isLoading
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White
+                    )
+                } else {
+                    Text(
+                        text = "Login",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-            },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                disabledContainerColor = Color.White,
-                focusedBorderColor = Color(0xFF4ADE80),
-                unfocusedBorderColor = Color(0xFFE5E7EB)
-            ),
-            singleLine = true
-        )
-
-        // Forget Password Link
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            contentAlignment = Alignment.CenterEnd
-        ) {
-            Text(
-                text = "Forget password",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF2563EB),
-                modifier = Modifier.clickable { /* TODO: Handle forget password */ }
-            )
-        }
-
-        // Login Button
-        Button(
-            onClick = { /* TODO: Handle Login */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp)
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4ADE80), // Hijau cerah
-                contentColor = Color.White
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-        ) {
-            Text(
-                text = "Login",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+            }
 
         // Divider dengan Text
         Row(
@@ -222,11 +270,14 @@ fun LoginScreen(
             ),
             modifier = Modifier.padding(top = 24.dp),
             onClick = { offset ->
-                signUpText.getStringAnnotations(tag = "SIGN_UP", start = offset, end = offset).firstOrNull()?.let {
-                    // Handle Sign Up click
+                if (!uiState.isLoading) {
+                    signUpText.getStringAnnotations(tag = "SIGN_UP", start = offset, end = offset).firstOrNull()?.let {
+                        onNavigateToSignUp()
+                    }
                 }
             }
         )
+        }
     }
 }
 

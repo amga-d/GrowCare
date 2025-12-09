@@ -20,9 +20,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     
-    private const val BASE_URL = "https://api.example.com/" // TODO: Update with actual API base URL
+    private const val BASE_URL = "https://api.example.com/" // Placeholder for other APIs
+    private const val WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/"
     private const val TIMEOUT_SECONDS = 30L
-    
+
     @Provides
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
@@ -57,12 +58,47 @@ object NetworkModule {
             .build()
     }
     
-    // TODO: Add weather API service when implementing weather feature
-    /*
+    /**
+     * Retrofit instance specifically for Weather API
+     */
     @Provides
     @Singleton
-    fun provideWeatherApiService(retrofit: Retrofit): WeatherApiService {
-        return retrofit.create(WeatherApiService::class.java)
+    fun provideWeatherRetrofit(
+        okHttpClient: OkHttpClient,
+        gson: Gson
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(WEATHER_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
     }
-    */
+
+    /**
+     * Weather API Service
+     */
+    @Provides
+    @Singleton
+    fun provideWeatherApiService(
+        @javax.inject.Named("weather") retrofit: Retrofit
+    ): com.example.growCare.data.remote.weather.WeatherApiService {
+        return retrofit.create(com.example.growCare.data.remote.weather.WeatherApiService::class.java)
+    }
+
+    /**
+     * Named qualifier for weather retrofit
+     */
+    @Provides
+    @Singleton
+    @javax.inject.Named("weather")
+    fun provideWeatherRetrofitNamed(
+        okHttpClient: OkHttpClient,
+        gson: Gson
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(WEATHER_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+    }
 }

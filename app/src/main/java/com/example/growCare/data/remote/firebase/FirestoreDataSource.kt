@@ -343,4 +343,62 @@ class FirestoreDataSource @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    /**
+     * Get user data (alias for getUserProfile)
+     */
+    suspend fun getUserData(userId: String): Result<Map<String, Any>?> = getUserProfile(userId)
+
+    /**
+     * Create user profile
+     */
+    suspend fun createUserProfile(user: com.example.growCare.domain.model.User): Result<Unit> = try {
+        val profileData = mapOf(
+            "uid" to user.uid,
+            "email" to user.email,
+            "displayName" to (user.displayName ?: ""),
+            "phoneNumber" to (user.phoneNumber ?: ""),
+            "profilePictureUrl" to (user.profilePictureUrl ?: ""),
+            "location" to (user.location ?: ""),
+            "farmSize" to (user.farmSize ?: 0.0),
+            "createdAt" to user.createdAt
+        )
+        saveUserProfile(user.uid, profileData)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
+     * Update user profile
+     */
+    suspend fun updateUserProfile(user: com.example.growCare.domain.model.User): Result<Unit> = try {
+        val profileData = mapOf(
+            "displayName" to (user.displayName ?: ""),
+            "phoneNumber" to (user.phoneNumber ?: ""),
+            "profilePictureUrl" to (user.profilePictureUrl ?: ""),
+            "location" to (user.location ?: ""),
+            "farmSize" to (user.farmSize ?: 0.0)
+        )
+        firestore.collection(COLLECTION_USERS)
+            .document(user.uid)
+            .update(profileData)
+            .await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
+     * Delete user data
+     */
+    suspend fun deleteUserData(userId: String): Result<Unit> = try {
+        // Delete user document
+        firestore.collection(COLLECTION_USERS)
+            .document(userId)
+            .delete()
+            .await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

@@ -1,6 +1,8 @@
 package com.example.growCare.presentation.screens.home
 
-import androidx.compose.foundation.Image
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,12 +22,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.util.Calendar
 
 @Composable
 fun HomeScreen(
@@ -33,9 +37,37 @@ fun HomeScreen(
     onNavigateToSeedScan: () -> Unit = {},
     onNavigateToDiseaseScan: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    // Location permission launcher
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.any { it }
+        if (granted) {
+            // Permission granted, refresh weather
+            viewModel.onLocationPermissionResult(true)
+        } else {
+            // Permission denied
+            viewModel.onLocationPermissionResult(false)
+        }
+    }
+
+    // Request location permission on first composition
+    LaunchedEffect(Unit) {
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
 
     Scaffold(
         bottomBar = { 
@@ -67,11 +99,36 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(scrollState)
         ) {
-            // 1. Header Section
-            HeaderSection()
+            // Show loading indicator
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
 
-            // 2. Weather Card
-            WeatherCard()
+            // Show error if any
+            uiState.error?.let { errorMessage ->
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            // 1. Header Section with user data
+            HeaderSection(user = uiState.user)
+
+            // 2. Weather Card with real data
+            WeatherCard(
+                weather = uiState.weather,
+                isLoading = uiState.isLoadingWeather,
+                error = uiState.weatherError
+            )
 
             // 3. Quick Actions Section
             QuickActionsSection(
@@ -89,7 +146,20 @@ fun HomeScreen(
 }
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(user: com.example.growCare.domain.model.User? = null) {
+    // Get greeting based on time of day
+    val greeting = remember {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        when (hour) {
+            in 0..11 -> "Good morning"
+            in 12..16 -> "Good afternoon"
+            else -> "Good evening"
+        }
+    }
+
+    // Get display name (first name only if available)
+    val displayName = user?.displayName?.split(" ")?.firstOrNull() ?: user?.email?.split("@")?.firstOrNull() ?: "Farmer"
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,27 +173,37 @@ fun HeaderSection() {
             imageVector = Icons.Default.Person,
             contentDescription = "User Avatar",
             modifier = Modifier
-                .size(48.dp),
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE8F5E9))
+                .padding(8.dp),
             tint = Color(0xFF4CAF50)
         )
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Greeting Text
-        Text(
-            text = "Good morning, John",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1A1A1A),
-            modifier = Modifier.weight(1f)
-        )
+        // Greeting Text with user name
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "$greeting,",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF757575)
+            )
+            Text(
+                text = displayName,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1A1A1A)
+            )
+        }
 
         // Notification Icon
         IconButton(onClick = { /* TODO */ }) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notifications",
-                tint = Color(0xFF4B5563), // Abu-abu gelap
+                tint = Color(0xFF4B5563),
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -131,7 +211,11 @@ fun HeaderSection() {
 }
 
 @Composable
-fun WeatherCard() {
+fun WeatherCard(
+    weather: com.example.growCare.domain.model.WeatherData? = null,
+    isLoading: Boolean = false,
+    error: String? = null
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -140,70 +224,163 @@ fun WeatherCard() {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Bagian Kiri (70%)
-            Column(modifier = Modifier.weight(0.7f)) {
-                Text(
-                    text = "Sunny, 24°C",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Text(
-                    text = "Sunny skies throughout the day.",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Text(
-                    text = "3-day forecast looks clear.",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Button(
-                    onClick = { /* TODO */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.padding(top = 12.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
-                ) {
-                    Text("View Details", color = Color.White, fontSize = 12.sp)
-                }
-            }
-
-            // Bagian Kanan (30%)
-            Box(
-                modifier = Modifier
-                    .weight(0.3f)
-                    .height(80.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Menggunakan Icon karena drawable/weather_sunny belum ada
-                // Jika ada, ganti dengan: painterResource(id = R.drawable.weather_sunny)
+        when {
+            isLoading -> {
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(Color(0xFFE3F2FD), Color(0xFFBBDEFB))
-                            ),
-                            shape = CircleShape
-                        ),
+                        .fillMaxWidth()
+                        .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.WbSunny,
-                        contentDescription = "Sunny",
-                        tint = Color(0xFFFFC107), // Kuning matahari
-                        modifier = Modifier.size(48.dp)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(40.dp),
+                        color = Color(0xFF4CAF50)
                     )
                 }
             }
+            error != null -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudOff,
+                        contentDescription = "Error",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Weather unavailable",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+            weather != null -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Left side - Weather info (70%)
+                    Column(modifier = Modifier.weight(0.7f)) {
+                        Text(
+                            text = "${weather.description}, ${weather.temperature.toInt()}°C",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = weather.location,
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                        Row(
+                            modifier = Modifier.padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "💧 ${weather.humidity}%",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = "💨 ${weather.windSpeed.toInt()} m/s",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        Text(
+                            text = "Feels like ${weather.feelsLike.toInt()}°C",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    // Right side - Weather icon (30%)
+                    Box(
+                        modifier = Modifier
+                            .weight(0.3f)
+                            .height(80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = getWeatherGradient(weather.description)
+                                    ),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = getWeatherIcon(weather.description),
+                                contentDescription = weather.description,
+                                tint = getWeatherIconColor(weather.description),
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+/**
+ * Get weather icon based on description
+ */
+fun getWeatherIcon(description: String): ImageVector {
+    return when {
+        description.contains("clear", ignoreCase = true) -> Icons.Default.WbSunny
+        description.contains("cloud", ignoreCase = true) -> Icons.Default.Cloud
+        description.contains("rain", ignoreCase = true) -> Icons.Default.Umbrella
+        description.contains("thunder", ignoreCase = true) -> Icons.Default.Thunderstorm
+        description.contains("snow", ignoreCase = true) -> Icons.Default.AcUnit
+        description.contains("mist", ignoreCase = true) ||
+        description.contains("fog", ignoreCase = true) -> Icons.Default.Cloud
+        else -> Icons.Default.WbCloudy
+    }
+}
+
+/**
+ * Get weather icon color based on description
+ */
+fun getWeatherIconColor(description: String): Color {
+    return when {
+        description.contains("clear", ignoreCase = true) -> Color(0xFFFFC107)
+        description.contains("cloud", ignoreCase = true) -> Color(0xFF90CAF9)
+        description.contains("rain", ignoreCase = true) -> Color(0xFF64B5F6)
+        description.contains("thunder", ignoreCase = true) -> Color(0xFFFFEB3B)
+        description.contains("snow", ignoreCase = true) -> Color(0xFFE3F2FD)
+        else -> Color(0xFFB0BEC5)
+    }
+}
+
+/**
+ * Get weather gradient colors based on description
+ */
+fun getWeatherGradient(description: String): List<Color> {
+    return when {
+        description.contains("clear", ignoreCase = true) ->
+            listOf(Color(0xFFFFF9C4), Color(0xFFFFF59D))
+        description.contains("cloud", ignoreCase = true) ->
+            listOf(Color(0xFFE3F2FD), Color(0xFFBBDEFB))
+        description.contains("rain", ignoreCase = true) ->
+            listOf(Color(0xFFB3E5FC), Color(0xFF81D4FA))
+        description.contains("thunder", ignoreCase = true) ->
+            listOf(Color(0xFFFFF9C4), Color(0xFFFFE082))
+        description.contains("snow", ignoreCase = true) ->
+            listOf(Color(0xFFE1F5FE), Color(0xFFB3E5FC))
+        else ->
+            listOf(Color(0xFFECEFF1), Color(0xFFCFD8DC))
     }
 }
 
@@ -440,4 +617,3 @@ fun BottomNavigationBar(
 fun HomeScreenPreview() {
     HomeScreen()
 }
-

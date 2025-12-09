@@ -1,6 +1,5 @@
 package com.example.growCare.presentation.screens.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,7 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Chat
-import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
@@ -23,20 +22,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun ProfileScreen(
     onNavigateToHome: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     if (showLogoutDialog) {
@@ -48,6 +49,7 @@ fun ProfileScreen(
                 TextButton(
                     onClick = {
                         showLogoutDialog = false
+                        viewModel.onAction(ProfileAction.SignOut)
                         onLogout()
                     }
                 ) {
@@ -80,16 +82,37 @@ fun ProfileScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
         ) {
-            // 2. Profile Header Section
-            ProfileHeaderSection()
+            // Loading state
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
 
-            // 3. Account Section
-            AccountSection()
+            // Error state
+            uiState.error?.let { errorMessage ->
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
 
-            // 4. Support Section
+            // Profile Header Section
+            ProfileHeaderSection(user = uiState.user)
+
+            // Account Section
+            AccountSection(user = uiState.user)
+
+            // Support Section
             SupportSection()
 
-            // 5. Log Out Button
+            // Log Out Button
             Button(
                 onClick = { showLogoutDialog = true },
                 colors = ButtonDefaults.buttonColors(
@@ -109,7 +132,7 @@ fun ProfileScreen(
                     fontWeight = FontWeight.Medium
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -146,7 +169,7 @@ fun ProfileTopBar() {
 }
 
 @Composable
-fun ProfileHeaderSection() {
+fun ProfileHeaderSection(user: com.example.growCare.domain.model.User? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -165,10 +188,12 @@ fun ProfileHeaderSection() {
                 modifier = Modifier
                     .size(120.dp)
                     .border(4.dp, Color(0xFFE0E0E0), CircleShape)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .background(Color(0xFFE8F5E9))
+                    .padding(24.dp),
                 tint = Color(0xFF4CAF50)
             )
-            
+
             // Camera Badge
             Surface(
                 shape = CircleShape,
@@ -190,7 +215,7 @@ fun ProfileHeaderSection() {
         }
 
         Text(
-            text = "Jordan Appleseed",
+            text = user?.displayName ?: "User",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF1A1A1A),
@@ -199,16 +224,26 @@ fun ProfileHeaderSection() {
         )
 
         Text(
-            text = "GreenAcres Farm",
+            text = user?.email ?: "email@example.com",
             fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF4CAF50)
+            fontWeight = FontWeight.Normal,
+            color = Color(0xFF757575)
         )
+
+        if (user?.location != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = user.location,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4CAF50)
+            )
+        }
     }
 }
 
 @Composable
-fun AccountSection() {
+fun AccountSection(user: com.example.growCare.domain.model.User? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -217,11 +252,41 @@ fun AccountSection() {
             .padding(vertical = 8.dp)
     ) {
         SectionHeader(title = "ACCOUNT")
-        MenuItem(
-            icon = Icons.Outlined.Person,
-            text = "Personal Information",
-            onClick = { /* TODO */ }
+
+        // Email Info
+        InfoItem(
+            icon = Icons.Outlined.Email,
+            label = "Email",
+            value = user?.email ?: "email@example.com"
         )
+
+        HorizontalDivider(
+            color = Color(0xFFF0F0F0),
+            thickness = 1.dp,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+
+        // Display Name Info
+        InfoItem(
+            icon = Icons.Outlined.Person,
+            label = "Display Name",
+            value = user?.displayName ?: "Not set"
+        )
+
+        HorizontalDivider(
+            color = Color(0xFFF0F0F0),
+            thickness = 1.dp,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+
+        // Location Info (if available)
+        if (user?.location != null) {
+            InfoItem(
+                icon = Icons.Outlined.LocationOn,
+                label = "Location",
+                value = user.location
+            )
+        }
     }
 }
 
@@ -235,12 +300,19 @@ fun SupportSection() {
             .padding(vertical = 8.dp)
     ) {
         SectionHeader(title = "SUPPORT")
+
         MenuItem(
-            icon = Icons.Outlined.HelpOutline,
-            text = "Help & Support",
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
+            text = "Help Center",
             onClick = { /* TODO */ }
         )
-        Divider(color = Color(0xFFF0F0F0), thickness = 1.dp, modifier = Modifier.padding(horizontal = 20.dp))
+
+        HorizontalDivider(
+            color = Color(0xFFF0F0F0),
+            thickness = 1.dp,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+
         MenuItem(
             icon = Icons.Outlined.Email,
             text = "Contact Us",
@@ -262,6 +334,43 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
+fun InfoItem(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFF4CAF50),
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF757575)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF1A1A1A)
+            )
+        }
+    }
+}
+
+@Composable
 fun MenuItem(
     icon: ImageVector,
     text: String,
@@ -279,10 +388,9 @@ fun MenuItem(
             imageVector = icon,
             contentDescription = null,
             tint = Color(0xFF424242),
-            modifier = Modifier
-                .size(24.dp)
-                .padding(end = 16.dp)
+            modifier = Modifier.size(24.dp)
         )
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = text,
             fontSize = 16.sp,

@@ -1,4 +1,147 @@
 package com.example.growCare.presentation.screens.home
 
-class HomeViewModel {
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.growCare.domain.model.User
+import com.example.growCare.domain.model.WeatherData
+import com.example.growCare.domain.repository.AuthRepository
+import com.example.growCare.domain.repository.WeatherRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * UI State for HomeScreen
+ */
+data class HomeUiState(
+    val user: User? = null,
+    val weather: WeatherData? = null,
+    val isLoading: Boolean = false,
+    val isLoadingWeather: Boolean = false,
+    val error: String? = null,
+    val weatherError: String? = null
+)
+
+/**
+ * ViewModel for HomeScreen
+ * Manages user data, weather data, and home screen state
+ */
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val weatherRepository: WeatherRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    init {
+        loadUserData()
+        loadWeatherData()
+    }
+
+    /**
+     * Load current user data
+     */
+    private fun loadUserData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val user = authRepository.getCurrentUser()
+                _uiState.update {
+                    it.copy(
+                        user = user,
+                        isLoading = false,
+                        error = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Load weather data for user's location
+     */
+    private fun loadWeatherData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingWeather = true) }
+
+            weatherRepository.getCurrentWeather()
+                .catch { e ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingWeather = false,
+                            weatherError = e.message ?: "Failed to load weather"
+                        )
+                    }
+                }
+                .collect { weatherData ->
+                    _uiState.update {
+                        it.copy(
+                            weather = weatherData,
+                            isLoadingWeather = false,
+                            weatherError = null
+                        )
+                    }
+                }
+        }
+    }
+
+    /**
+     * Refresh user data
+     */
+    fun refreshUserData() {
+        loadUserData()
+    }
+
+    /**
+     * Refresh weather data
+     */
+    fun refreshWeather() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingWeather = true) }
+            weatherRepository.refreshWeather()
+                .onSuccess {
+                    _uiState.update { it.copy(isLoadingWeather = false) }
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingWeather = false,
+                            weatherError = e.message
+                        )
+                    }
+                }
+        }
+    }
+
+    /**
+     * Handle location permission result
+     */
+    fun onLocationPermissionResult(granted: Boolean) {
+        if (granted) {
+            // Permission granted, reload weather data
+            loadWeatherData()
+        } else {
+            // Permission denied, show error
+            _uiState.update {
+                it.copy(
+                    isLoadingWeather = false,
+                    weatherError = "Location permission required for weather data"
+                )
+            }
+        }
+    }
 }

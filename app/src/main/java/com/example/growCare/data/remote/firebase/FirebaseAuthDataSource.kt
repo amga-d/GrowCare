@@ -33,10 +33,18 @@ class FirebaseAuthDataSource @Inject constructor(
      * Create new user with email and password
      * @return FirebaseUser if successful, null otherwise
      */
-    suspend fun signUpWithEmail(email: String, password: String): Result<FirebaseUser> = try {
+    suspend fun signUpWithEmail(email: String, password: String, displayName: String = ""): Result<FirebaseUser> = try {
         val result = auth.createUserWithEmailAndPassword(email, password).await()
-        if (result.user != null) {
-            Result.success(result.user!!)
+        val user = result.user
+        if (user != null) {
+            // Update display name if provided
+            if (displayName.isNotBlank()) {
+                val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                    .setDisplayName(displayName)
+                    .build()
+                user.updateProfile(profileUpdates).await()
+            }
+            Result.success(user)
         } else {
             Result.failure(Exception("Sign up failed: User is null"))
         }
