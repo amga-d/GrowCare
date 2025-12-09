@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth.profile
+package com.example.mobileappdev.presentation.screens.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

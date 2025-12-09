@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth.home
+package com.example.mobileappdev.presentation.screens.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +32,7 @@ import com.example.mobileappdev.R
 fun HomeScreen(
     onNavigateToFertilizer: () -> Unit = {},
     onNavigateToSeedScan: () -> Unit = {},
+    onNavigateToDiseaseScan: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
 ) {

@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth.fertilizer
+package com.example.mobileappdev.presentation.screens.fertilizer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

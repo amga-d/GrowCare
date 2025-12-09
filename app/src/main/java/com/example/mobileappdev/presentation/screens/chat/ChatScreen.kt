@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth.chat
+package com.example.mobileappdev.presentation.screens.chat
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
@@ -33,13 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mobileappdev.R
-
-data class ChatMessage(
-    val id: String,
-    val text: String,
-    val isUser: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
-)
+import com.example.mobileappdev.domain.model.ChatMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +54,11 @@ fun ChatScreen(
 
     // Initial dummy messages
     LaunchedEffect(Unit) {
-        messages.add(ChatMessage("1", "Hello! I'm your Agri Assistant. How can I help you with your crops today?", false))
+        messages.add(ChatMessage(
+            id = "1",
+            content = "Hello! I'm your Agri Assistant. How can I help you with your crops today?",
+            isUser = false
+        ))
     }
 
     // Auto scroll to bottom when new message added
@@ -181,7 +179,11 @@ fun ChatScreen(
                         IconButton(
                             onClick = {
                                 if (isSendEnabled) {
-                                    messages.add(ChatMessage(System.currentTimeMillis().toString(), messageText, true))
+                                    messages.add(ChatMessage(
+                                        id = System.currentTimeMillis().toString(),
+                                        content = messageText,
+                                        isUser = true
+                                    ))
                                     messageText = ""
                                     // Simulate AI response
                                     // In real app, this would be an API call
@@ -313,7 +315,7 @@ fun AiMessageItem(message: ChatMessage) {
                 modifier = Modifier.widthIn(max = 280.dp) // Approx 75% of screen width
             ) {
                 Text(
-                    text = message.text,
+                    text = message.content,
                     fontSize = 15.sp,
                     color = Color(0xFF1A1A1A),
                     lineHeight = 21.sp,
@@ -358,7 +360,7 @@ fun UserMessageItem(message: ChatMessage) {
                 modifier = Modifier.widthIn(max = 280.dp)
             ) {
                 Text(
-                    text = message.text,
+                    text = message.content,
                     fontSize = 15.sp,
                     color = Color.White,
                     lineHeight = 21.sp,

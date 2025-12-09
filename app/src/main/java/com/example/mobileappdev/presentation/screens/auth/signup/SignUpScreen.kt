@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth
+package com.example.mobileappdev.presentation.screens.auth.signup
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,7 +35,10 @@ import androidx.compose.ui.unit.sp
 import com.example.mobileappdev.R
 
 @Composable
-fun SignUpScreen() {
+fun SignUpScreen(
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {}
+) {
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

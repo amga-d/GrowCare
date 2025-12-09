@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth.seed
+package com.example.mobileappdev.presentation.screens.seed
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +30,10 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SeedScanScreen(onNavigateBack: () -> Unit = {}) {
+fun SeedScanScreen(
+    onNavigateBack: () -> Unit = {},
+    onNavigateToResult: () -> Unit = {}
+) {
     val scrollState = rememberScrollState()
 
     val primaryGreen = Color(0xFF4CAF50)

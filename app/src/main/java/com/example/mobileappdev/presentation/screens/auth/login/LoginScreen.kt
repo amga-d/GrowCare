@@ -1,4 +1,4 @@
-package com.example.mobileappdev.screens.auth
+package com.example.mobileappdev.presentation.screens.auth.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,7 +35,10 @@ import androidx.compose.ui.unit.sp
 import com.example.mobileappdev.R
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    onNavigateToSignUp: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {}
+) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
