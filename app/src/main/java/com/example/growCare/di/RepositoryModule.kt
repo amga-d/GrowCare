@@ -25,4 +25,22 @@ abstract class RepositoryModule {
     abstract fun bindWeatherRepository(
         impl: com.example.growCare.data.repository.WeatherRepositoryImpl
     ): com.example.growCare.domain.repository.WeatherRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDetectionRepository(
+        impl: com.example.growCare.data.repository.DetectionRepositoryImpl
+    ): com.example.growCare.domain.repository.DetectionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChatRepository(
+        impl: com.example.growCare.data.repository.ChatRepositoryImpl
+    ): com.example.growCare.domain.repository.ChatRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFertilizerRepository(
+        impl: com.example.growCare.data.repository.FertilizerRepositoryImpl
+    ): com.example.growCare.domain.repository.FertilizerRepository
 }

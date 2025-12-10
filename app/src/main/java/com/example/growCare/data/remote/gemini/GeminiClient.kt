@@ -26,7 +26,7 @@ class GeminiClient @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        private const val MODEL_NAME = "gemini-1.5-flash"
+        private const val MODEL_NAME = "gemini-2.0-flash"
         
         // Prompts for different features
         private const val DISEASE_ANALYSIS_PROMPT = """

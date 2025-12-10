@@ -1,238 +1,201 @@
 package com.example.growCare.presentation.screens.seed
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.outlined.Chat
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import coil.compose.AsyncImage
+import com.example.growCare.domain.model.SeedQuality
+import com.example.growCare.presentation.components.CameraCapture
+import com.example.growCare.presentation.components.AnimatedLoadingIndicator
+import com.example.growCare.presentation.components.FadeInContent
+import com.example.growCare.presentation.components.SlideInFromBottom
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeedScanScreen(
+    viewModel: SeedViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onNavigateToResult: () -> Unit = {}
+    onNavigateToResult: (SeedQuality, String?) -> Unit = { _, _ -> }
 ) {
-    val scrollState = rememberScrollState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Gallery picker launcher
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.onAction(SeedAction.CaptureImage(it)) }
+    }
 
-    val primaryGreen = Color(0xFF4CAF50)
-    val textBlack = Color(0xFF1A1A1A)
-    val textGray = Color(0xFF757575)
-    val cameraBg = Color(0xFFF0F9F0)
-    val borderGreen = Color(0xFFA5D6A7)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Seeding Quality",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textBlack
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = textBlack
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
-                ),
-                modifier = Modifier.shadow(elevation = 2.dp)
-            )
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp,
-                modifier = Modifier.height(80.dp)
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    selected = true,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = primaryGreen,
-                        selectedTextColor = primaryGreen,
-                        indicatorColor = Color(0xFFE8F5E9)
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Chat, contentDescription = "Chat AI") },
-                    label = { Text("Chat AI") },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = textGray,
-                        unselectedTextColor = textGray
-                    )
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    selected = false,
-                    onClick = { /* TODO */ },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = textGray,
-                        unselectedTextColor = textGray
-                    )
-                )
-            }
-        },
-        containerColor = Color.White
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp)
-            ) {
-                // A. Main Title
-                Text(
-                    text = "Assess Your Seeding Quality",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textBlack,
-                    lineHeight = 34.sp,
-                    letterSpacing = (-0.02).sp,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                // B. Instruction Text
-                Text(
-                    text = "Place seeds on a flat, contrasting surface and tap to scan.",
-                    fontSize = 15.sp,
-                    color = textGray,
-                    lineHeight = 21.sp,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                // C. Camera Preview Area
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                        .padding(bottom = 24.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(cameraBg)
-                        .dashedBorder(
-                            color = borderGreen,
-                            strokeWidth = 2.dp,
-                            cornerRadius = 16.dp
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(24.dp)
-                    ) {
-                        Text(
-                            text = "Camera Area",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF424242),
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Text(
-                            text = "Tap the button below to start scanning your seeds.",
-                            fontSize = 14.sp,
-                            color = Color(0xFF666666),
-                            textAlign = TextAlign.Center
-                        )
-                    }
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is SeedEvent.AnalysisComplete -> {
+                    onNavigateToResult(event.analysis, event.imageUrl)
                 }
-
-                // 3. Start Scan Button
-                Button(
-                    onClick = { /* TODO: Handle Scan */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(bottom = 20.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = primaryGreen,
-                        contentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(
-                        text = "Start Scan",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                is SeedEvent.ShowError -> {
+                    // TODO: Show snackbar
+                }
+                is SeedEvent.ShowMessage -> {
+                    // TODO: Show snackbar
                 }
             }
         }
     }
-}
 
-fun Modifier.shadow(
-    elevation: androidx.compose.ui.unit.Dp,
-    shape: androidx.compose.ui.graphics.Shape = androidx.compose.ui.graphics.RectangleShape,
-    clip: Boolean = elevation > 0.dp
-): Modifier {
-    return this.drawBehind {
-        drawRect(
-            color = Color.Black.copy(alpha = 0.2f),
-            size = size
-        )
-    }
-}
+    val primaryGreen = Color(0xFF4CAF50)
 
-fun Modifier.dashedBorder(
-    color: Color,
-    strokeWidth: androidx.compose.ui.unit.Dp,
-    cornerRadius: androidx.compose.ui.unit.Dp
-): Modifier {
-    return this.drawBehind {
-        val stroke = Stroke(
-            width = strokeWidth.toPx(),
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 10f), 0f)
+    if (uiState.showCamera) {
+        CameraCapture(
+            onImageCaptured = { uri ->
+                viewModel.onAction(SeedAction.CaptureImage(uri))
+            },
+            onError = { error ->
+                viewModel.onAction(SeedAction.HideCamera)
+            },
+            onClose = {
+                viewModel.onAction(SeedAction.HideCamera)
+            }
         )
-        drawRoundRect(
-            color = color,
-            cornerRadius = CornerRadius(cornerRadius.toPx()),
-            style = stroke
-        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Seed Quality", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Show captured image preview if available with animation
+                FadeInContent(visible = uiState.capturedImageUri != null) {
+                    uiState.capturedImageUri?.let { uri ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            AsyncImage(
+                                model = uri,
+                                contentDescription = "Captured seed image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+
+                // Loading state with animated indicator
+                if (uiState.isAnalyzing) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    AnimatedLoadingIndicator(message = "Analyzing seed quality...")
+                    Spacer(modifier = Modifier.weight(1f))
+                } else if (uiState.error != null) {
+                    // Error state with slide-in animation
+                    SlideInFromBottom(visible = true) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = uiState.error ?: "An error occurred",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            Button(
+                                onClick = { viewModel.onAction(SeedAction.RetryAnalysis) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                } else if (uiState.capturedImageUri == null) {
+                    // Instructions when no image captured
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "Capture an image of seeds to analyze their quality",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                // Capture button - always visible when not analyzing
+                if (!uiState.isAnalyzing) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.onAction(SeedAction.ShowCamera) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Camera")
+                        }
+                        
+                        OutlinedButton(
+                            onClick = { galleryLauncher.launch("image/*") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Gallery")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

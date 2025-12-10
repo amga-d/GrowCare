@@ -26,19 +26,40 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.growCare.domain.model.FertilizerRecommendation
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
+fun FertilizerScreen(
+    viewModel: FertilizerViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit = {},
+    onNavigateToResult: (FertilizerRecommendation) -> Unit = {}
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
-    // Form States
-    var cropType by remember { mutableStateOf("Corn") }
-    var growthStage by remember { mutableStateOf("Vegetative") }
-    var soilType by remember { mutableStateOf("Loamy") }
-    var areaSize by remember { mutableStateOf("") }
-    var targetYield by remember { mutableFloatStateOf(180f) }
+    // Handle events
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is FertilizerEvent.NavigateToResult -> {
+                    onNavigateToResult(event.recommendation)
+                }
+                is FertilizerEvent.ShowError -> {
+                    // TODO: Show snackbar
+                }
+                is FertilizerEvent.ShowMessage -> {
+                    // TODO: Show snackbar
+                }
+            }
+        }
+    }
 
     // Dropdown Expanded States
     var cropTypeExpanded by remember { mutableStateOf(false) }
@@ -178,48 +199,61 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                     .fillMaxWidth()
             ) {
                 // A. Crop Type Dropdown
-                Text(
-                    text = "Crop Type",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textBlack,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                ExposedDropdownMenuBox(
-                    expanded = cropTypeExpanded,
-                    onExpandedChange = { cropTypeExpanded = !cropTypeExpanded },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                ) {
-                    OutlinedTextField(
-                        value = cropType,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cropTypeExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedBorderColor = primaryBlue,
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        )
+                Column {
+                    Text(
+                        text = "Crop Type",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textBlack,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    ExposedDropdownMenu(
+                    ExposedDropdownMenuBox(
                         expanded = cropTypeExpanded,
-                        onDismissRequest = { cropTypeExpanded = false },
-                        modifier = Modifier.background(Color.White)
+                        onExpandedChange = { cropTypeExpanded = !cropTypeExpanded },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                     ) {
-                        cropTypes.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(text = item) },
-                                onClick = {
-                                    cropType = item
-                                    cropTypeExpanded = false
-                                }
-                            )
+                        OutlinedTextField(
+                            value = uiState.cropType,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cropTypeExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedBorderColor = primaryBlue,
+                                unfocusedBorderColor = Color(0xFFE0E0E0)
+                            ),
+                            isError = uiState.cropTypeError != null
+                        )
+                        ExposedDropdownMenu(
+                            expanded = cropTypeExpanded,
+                            onDismissRequest = { cropTypeExpanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            cropTypes.forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(text = item) },
+                                    onClick = {
+                                        viewModel.onAction(FertilizerAction.UpdateCropType(item))
+                                        cropTypeExpanded = false
+                                    }
+                                )
+                            }
                         }
+                    }
+                    if (uiState.cropTypeError != null) {
+                        Text(
+                            text = uiState.cropTypeError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
 
@@ -244,7 +278,7 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                             onExpandedChange = { growthStageExpanded = !growthStageExpanded }
                         ) {
                             OutlinedTextField(
-                                value = growthStage,
+                                value = uiState.growthStage,
                                 onValueChange = {},
                                 readOnly = true,
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = growthStageExpanded) },
@@ -268,7 +302,7 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                                     DropdownMenuItem(
                                         text = { Text(text = item) },
                                         onClick = {
-                                            growthStage = item
+                                            viewModel.onAction(FertilizerAction.UpdateGrowthStage(item))
                                             growthStageExpanded = false
                                         }
                                     )
@@ -291,7 +325,7 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                             onExpandedChange = { soilTypeExpanded = !soilTypeExpanded }
                         ) {
                             OutlinedTextField(
-                                value = soilType,
+                                value = uiState.soilType,
                                 onValueChange = {},
                                 readOnly = true,
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = soilTypeExpanded) },
@@ -315,7 +349,7 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                                     DropdownMenuItem(
                                         text = { Text(text = item) },
                                         onClick = {
-                                            soilType = item
+                                            viewModel.onAction(FertilizerAction.UpdateSoilType(item))
                                             soilTypeExpanded = false
                                         }
                                     )
@@ -334,13 +368,13 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 OutlinedTextField(
-                    value = areaSize,
-                    onValueChange = { areaSize = it },
+                    value = uiState.areaSize,
+                    onValueChange = { viewModel.onAction(FertilizerAction.UpdateAreaSize(it)) },
                     placeholder = { Text("e.g. 50", color = textGray) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 24.dp),
+                        .padding(bottom = 8.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
@@ -348,8 +382,19 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                         focusedBorderColor = primaryBlue,
                         unfocusedBorderColor = Color(0xFFE0E0E0)
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    isError = uiState.areaSizeError != null
                 )
+                if (uiState.areaSizeError != null) {
+                    Text(
+                        text = uiState.areaSizeError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 // D. Target Yield Goal Slider
                 Row(
@@ -366,7 +411,7 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                         color = textBlack
                     )
                     Text(
-                        text = "${targetYield.toInt()} bu/ac",
+                        text = "${uiState.targetYield.toInt()} bu/ac",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = secondaryGreen
@@ -374,8 +419,8 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                 }
 
                 Slider(
-                    value = targetYield,
-                    onValueChange = { targetYield = it },
+                    value = uiState.targetYield,
+                    onValueChange = { viewModel.onAction(FertilizerAction.UpdateTargetYield(it)) },
                     valueRange = 100f..250f,
                     colors = SliderDefaults.colors(
                         thumbColor = secondaryGreen,
@@ -397,7 +442,7 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
 
                 // 4. Calculate Button
                 Button(
-                    onClick = { /* TODO: Handle Calculate */ },
+                    onClick = { viewModel.onAction(FertilizerAction.Calculate) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -406,13 +451,21 @@ fun FertilizerScreen(onNavigateBack: () -> Unit = {}) {
                         containerColor = primaryBlue,
                         contentColor = Color.White
                     ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                    enabled = !uiState.isCalculating
                 ) {
-                    Text(
-                        text = "Calculate Recipe",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (uiState.isCalculating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text(
+                            text = "Calculate Recipe",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

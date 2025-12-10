@@ -38,6 +38,7 @@ fun HomeScreen(
     onNavigateToDiseaseScan: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToHistory: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
@@ -121,7 +122,10 @@ fun HomeScreen(
             }
 
             // 1. Header Section with user data
-            HeaderSection(user = uiState.user)
+            HeaderSection(
+                user = uiState.user,
+                onHistoryClick = onNavigateToHistory
+            )
 
             // 2. Weather Card with real data
             WeatherCard(
@@ -133,7 +137,8 @@ fun HomeScreen(
             // 3. Quick Actions Section
             QuickActionsSection(
                 onFertilizerClick = onNavigateToFertilizer,
-                onSeedScanClick = onNavigateToSeedScan
+                onSeedScanClick = onNavigateToSeedScan,
+                onDiseaseScanClick = onNavigateToDiseaseScan
             )
 
             // 4. Crop Health Summary Section
@@ -146,7 +151,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun HeaderSection(user: com.example.growCare.domain.model.User? = null) {
+fun HeaderSection(
+    user: com.example.growCare.domain.model.User? = null,
+    onHistoryClick: () -> Unit = {}
+) {
     // Get greeting based on time of day
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -198,6 +206,16 @@ fun HeaderSection(user: com.example.growCare.domain.model.User? = null) {
             )
         }
 
+        // History Icon
+        IconButton(onClick = onHistoryClick) {
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = "Activity History",
+                tint = Color(0xFF4CAF50),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        
         // Notification Icon
         IconButton(onClick = { /* TODO */ }) {
             Icon(
@@ -387,7 +405,8 @@ fun getWeatherGradient(description: String): List<Color> {
 @Composable
 fun QuickActionsSection(
     onFertilizerClick: () -> Unit,
-    onSeedScanClick: () -> Unit
+    onSeedScanClick: () -> Unit,
+    onDiseaseScanClick: () -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -407,7 +426,8 @@ fun QuickActionsSection(
                 title = "Disease Detection",
                 subtitle = "Scan and identify crop diseases",
                 icon = Icons.Default.CenterFocusStrong, // Icon kamera/scan
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = onDiseaseScanClick
             )
             QuickActionCard(
                 title = "Seeding Quality",
