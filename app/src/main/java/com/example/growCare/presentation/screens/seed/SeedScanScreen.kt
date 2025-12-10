@@ -60,7 +60,7 @@ fun SeedScanScreen(
         }
     }
 
-    val primaryGreen = Color(0xFF4CAF50)
+    val primaryGreen = MaterialTheme.colorScheme.primary
 
     if (uiState.showCamera) {
         CameraCapture(

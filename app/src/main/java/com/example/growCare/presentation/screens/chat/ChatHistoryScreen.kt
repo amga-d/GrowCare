@@ -34,8 +34,8 @@ fun ChatHistoryScreen(
     onConversationClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val primaryGreen = Color(0xFF4CAF50)
-    val backgroundGray = Color(0xFFF8F9FA)
+    val primaryGreen = MaterialTheme.colorScheme.primary
+    val backgroundGray = MaterialTheme.colorScheme.background
 
     LaunchedEffect(Unit) {
         viewModel.onAction(ChatAction.LoadAllConversations)
@@ -131,7 +131,7 @@ fun ConversationCard(
     conversation: ConversationItem,
     onClick: () -> Unit
 ) {
-    val primaryGreen = Color(0xFF4CAF50)
+    val primaryGreen = MaterialTheme.colorScheme.primary
     
     Card(
         modifier = Modifier

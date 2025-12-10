@@ -80,8 +80,8 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { /* TODO: Handle Scan */ },
-                containerColor = Color(0xFFFFC107),
-                contentColor = Color.Black,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
                 elevation = FloatingActionButtonDefaults.elevation(6.dp)
             ) {
                 Icon(
@@ -91,7 +91,7 @@ fun HomeScreen(
                 )
             }
         },
-        containerColor = Color(0xFFF5F5F5) // Abu-abu muda
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -172,7 +172,7 @@ fun HeaderSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp)
-            .background(Color.White, shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
+            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -183,9 +183,9 @@ fun HeaderSection(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFE8F5E9))
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(8.dp),
-            tint = Color(0xFF4CAF50)
+            tint = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -196,13 +196,13 @@ fun HeaderSection(
                 text = "$greeting,",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal,
-                color = Color(0xFF757575)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = displayName,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A1A1A)
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -211,7 +211,7 @@ fun HeaderSection(
             Icon(
                 imageVector = Icons.Default.History,
                 contentDescription = "Activity History",
-                tint = Color(0xFF4CAF50),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -221,7 +221,7 @@ fun HeaderSection(
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notifications",
-                tint = Color(0xFF4B5563),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -240,7 +240,7 @@ fun WeatherCard(
             .padding(bottom = 20.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         when {
             isLoading -> {
@@ -252,7 +252,7 @@ fun WeatherCard(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(40.dp),
-                        color = Color(0xFF4CAF50)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -266,14 +266,14 @@ fun WeatherCard(
                     Icon(
                         imageVector = Icons.Default.CloudOff,
                         contentDescription = "Error",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(40.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Weather unavailable",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -290,12 +290,12 @@ fun WeatherCard(
                             text = "${weather.description}, ${weather.temperature.toInt()}°C",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = weather.location,
                             fontSize = 14.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Row(
                             modifier = Modifier.padding(top = 4.dp),
@@ -304,18 +304,18 @@ fun WeatherCard(
                             Text(
                                 text = "💧 ${weather.humidity}%",
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "💨 ${weather.windSpeed.toInt()} m/s",
                                 fontSize = 12.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
                             text = "Feels like ${weather.feelsLike.toInt()}°C",
                             fontSize = 12.sp,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
@@ -413,7 +413,7 @@ fun QuickActionsSection(
             text = "Quick Actions",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(vertical = 12.dp)
         )
 
@@ -463,7 +463,7 @@ fun QuickActionCard(
         modifier = modifier.height(120.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onClick
     ) {
         Column(
@@ -475,7 +475,7 @@ fun QuickActionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFF4CAF50),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(32.dp)
                     .padding(bottom = 12.dp)
@@ -484,12 +484,12 @@ fun QuickActionCard(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 14.sp
             )
         }
@@ -503,7 +503,7 @@ fun CropHealthSummarySection() {
             text = "Crop Health Summary",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(top = 24.dp, bottom = 12.dp)
         )
 
@@ -511,7 +511,7 @@ fun CropHealthSummarySection() {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Header
@@ -520,16 +520,16 @@ fun CropHealthSummarySection() {
                         text = "Field A-1 (Corn)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
                     Surface(
-                        color = Color(0xFFFFF9C4), // Kuning muda
+                        color = com.example.growCare.ui.theme.WarningYellow,
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
                             text = "Warning",
-                            color = Color(0xFFF57F17), // Kuning tua
+                            color = com.example.growCare.ui.theme.WarningOrange,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
@@ -539,7 +539,7 @@ fun CropHealthSummarySection() {
                 Text(
                     text = "Recent harvest",
                     fontSize = 12.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                 )
 
@@ -550,8 +550,8 @@ fun CropHealthSummarySection() {
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp)),
-                    color = Color(0xFFFFC107), // Kuning
-                    trackColor = Color(0xFFE0E0E0), // Abu-abu muda
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -560,13 +560,13 @@ fun CropHealthSummarySection() {
                     Text(
                         text = "Soil Moisture",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
                         text = "45%",
                         fontSize = 12.sp,
-                        color = Color(0xFF4B5563) // Abu-abu gelap
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -574,8 +574,8 @@ fun CropHealthSummarySection() {
                 Button(
                     onClick = { /* TODO */ },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE8F5E9), // Hijau muda background
-                        contentColor = Color(0xFF4CAF50) // Text hijau
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
@@ -595,38 +595,84 @@ fun BottomNavigationBar(
     onProfileClick: () -> Unit = {}
 ) {
     NavigationBar(
-        containerColor = Color.White,
-        tonalElevation = 8.dp
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        tonalElevation = 0.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
     ) {
         NavigationBarItem(
-            icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
-            label = { Text("Home") },
+            icon = { 
+                Icon(
+                    Icons.Filled.Home, 
+                    contentDescription = "Home",
+                    modifier = Modifier.size(26.dp)
+                ) 
+            },
+            label = { 
+                Text(
+                    "Home",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                ) 
+            },
             selected = true,
-            onClick = { /* TODO */ },
+            onClick = { /* Current screen */ },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF4CAF50),
-                selectedTextColor = Color(0xFF4CAF50),
-                indicatorColor = Color(0xFFE8F5E9)
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
             )
         )
         NavigationBarItem(
-            icon = { Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = "Chat AI") },
-            label = { Text("Chat AI") },
+            icon = { 
+                Icon(
+                    Icons.AutoMirrored.Outlined.Chat, 
+                    contentDescription = "Chat AI",
+                    modifier = Modifier.size(26.dp)
+                ) 
+            },
+            label = { 
+                Text(
+                    "Chat AI",
+                    style = MaterialTheme.typography.labelMedium
+                ) 
+            },
             selected = false,
             onClick = onChatClick,
             colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
             )
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
-            label = { Text("Profile") },
+            icon = { 
+                Icon(
+                    Icons.Outlined.Person, 
+                    contentDescription = "Profile",
+                    modifier = Modifier.size(26.dp)
+                ) 
+            },
+            label = { 
+                Text(
+                    "Profile",
+                    style = MaterialTheme.typography.labelMedium
+                ) 
+            },
             selected = false,
             onClick = onProfileClick,
             colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
             )
         )
     }

@@ -7,6 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.growCare.data.local.preferences.ThemeMode
 import com.example.growCare.presentation.screens.auth.login.LoginScreen
 import com.example.growCare.presentation.screens.auth.signup.SignUpScreen
 import com.example.growCare.presentation.screens.chat.ChatScreen
@@ -25,7 +26,9 @@ import com.example.growCare.presentation.screens.seed.SeedResultScreen
 fun NavGraph(
     navController: NavHostController,
     navigationViewModel: NavigationViewModel = hiltViewModel(),
-    startDestination: String = Screen.HOME
+    startDestination: String = Screen.HOME,
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    onThemeModeChange: (ThemeMode) -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -41,7 +44,9 @@ fun NavGraph(
                     navController.navigate(Screen.HOME) {
                         popUpTo(Screen.LOGIN) { inclusive = true }
                     }
-                }
+                },
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange
             )
         }
 
@@ -54,7 +59,9 @@ fun NavGraph(
                     navController.navigate(Screen.HOME) {
                         popUpTo(Screen.SIGNUP) { inclusive = true }
                     }
-                }
+                },
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange
             )
         }
 
@@ -116,6 +123,16 @@ fun NavGraph(
                     onNavigateBack = {
                         navigationViewModel.clearSeedAnalysis()
                         navController.popBackStack()
+                    },
+                    onScanAnother = {
+                        navigationViewModel.clearSeedAnalysis()
+                        navController.popBackStack()
+                    },
+                    onNavigateToHome = {
+                        navigationViewModel.clearSeedAnalysis()
+                        navController.navigate(Screen.HOME) {
+                            popUpTo(Screen.HOME) { inclusive = true }
+                        }
                     }
                 )
             }
@@ -146,6 +163,16 @@ fun NavGraph(
                     onNavigateBack = {
                         navigationViewModel.clearDiseaseAnalysis()
                         navController.popBackStack()
+                    },
+                    onScanAnother = {
+                        navigationViewModel.clearDiseaseAnalysis()
+                        navController.popBackStack()
+                    },
+                    onNavigateToHome = {
+                        navigationViewModel.clearDiseaseAnalysis()
+                        navController.navigate(Screen.HOME) {
+                            popUpTo(Screen.HOME) { inclusive = true }
+                        }
                     }
                 )
             }
@@ -184,7 +211,9 @@ fun NavGraph(
                     navController.navigate(Screen.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
-                }
+                },
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange
             )
         }
         

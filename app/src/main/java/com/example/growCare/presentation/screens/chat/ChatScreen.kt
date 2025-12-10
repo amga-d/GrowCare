@@ -3,10 +3,8 @@ package com.example.growCare.presentation.screens.chat
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,10 +13,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
@@ -32,7 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,13 +52,6 @@ fun ChatScreen(
     onNavigateToHome: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
 ) {
-    val primaryGreen = Color(0xFF4CAF50)
-    val backgroundGray = Color(0xFFF8F9FA)
-    val textBlack = Color(0xFF1A1A1A)
-    val textGray = Color(0xFF757575)
-    val inputBackground = Color(0xFFF5F5F5)
-
-    // Collect UI state from ViewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val messages = uiState.messages
     
@@ -152,16 +146,15 @@ fun ChatScreen(
                     Column {
                         Text(
                             text = uiState.conversationTitle,
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = textBlack,
                             maxLines = 1
                         )
                         if (uiState.messages.isNotEmpty()) {
                             Text(
                                 text = "${uiState.messages.size} messages",
-                                fontSize = 12.sp,
-                                color = textGray
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -170,8 +163,7 @@ fun ChatScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = textBlack
+                            contentDescription = "Back"
                         )
                     }
                 },
@@ -180,12 +172,12 @@ fun ChatScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Chat,
                             contentDescription = "New Chat",
-                            tint = primaryGreen
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 modifier = Modifier.shadow(elevation = 2.dp)
             )
@@ -205,15 +197,14 @@ fun ChatScreen(
                             label = { 
                                 Text(
                                     text = chip,
-                                    color = Color(0xFF388E3C),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium
                                 ) 
                             },
-                            border = BorderStroke(1.dp, Color(0xFF81C784)),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                             shape = RoundedCornerShape(20.dp),
                             colors = SuggestionChipDefaults.suggestionChipColors(
-                                containerColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.surface
                             )
                         )
                     }
@@ -221,7 +212,7 @@ fun ChatScreen(
 
                 // Input Area
                 Surface(
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 8.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -273,7 +264,7 @@ fun ChatScreen(
                             Icon(
                                 imageVector = Icons.Default.CameraAlt,
                                 contentDescription = "Add image",
-                                tint = if (selectedImageUri != null) primaryGreen else textGray
+                                tint = if (selectedImageUri != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
@@ -284,18 +275,35 @@ fun ChatScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp)
-                                .background(inputBackground, RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             textStyle = LocalTextStyle.current.copy(
                                 fontSize = 15.sp,
-                                color = textBlack
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(
+                                onSend = {
+                                    val isSendEnabled = (messageText.isNotBlank() || selectedImageUri != null) && !uiState.isSending
+                                    if (isSendEnabled) {
+                                        if (selectedImageUri != null) {
+                                            // Handle image + text
+                                            // For now just sending text as placeholder
+                                            viewModel.sendMessage(messageText)
+                                            selectedImageUri = null
+                                        } else {
+                                            viewModel.sendMessage(messageText)
+                                        }
+                                        messageText = ""
+                                    }
+                                }
                             ),
                             decorationBox = { innerTextField ->
                                 Box(contentAlignment = Alignment.CenterStart) {
                                     if (messageText.isEmpty()) {
                                         Text(
                                             text = "Ask about your crops...",
-                                            color = Color(0xFF9E9E9E),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 15.sp
                                         )
                                     }
@@ -309,7 +317,6 @@ fun ChatScreen(
                         IconButton(
                             onClick = {
                                 if (isSendEnabled) {
-                                    // Send message with or without image through ViewModel
                                     if (selectedImageUri != null) {
                                         viewModel.onAction(
                                             ChatAction.SendMessageWithImage(
@@ -323,7 +330,6 @@ fun ChatScreen(
                                     }
                                     messageText = ""
                                     
-                                    // Scroll to bottom
                                     scope.launch {
                                         listState.animateScrollToItem(messages.size)
                                     }
@@ -334,61 +340,106 @@ fun ChatScreen(
                                 .padding(start = 8.dp)
                                 .size(40.dp)
                                 .background(
-                                    if (isSendEnabled) primaryGreen else Color(0xFFBDBDBD),
+                                    if (isSendEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                                     CircleShape
                                 )
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "Send",
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 }
                 
-                // Bottom Navigation (Optional, if part of main nav)
+                // Bottom Navigation
                 NavigationBar(
-                    containerColor = Color.White,
-                    tonalElevation = 8.dp,
-                    modifier = Modifier.height(56.dp)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
                 ) {
                     NavigationBarItem(
-                        icon = { Icon(Icons.Outlined.Home, contentDescription = "Home") },
-                        label = { Text("Home") },
+                        icon = { 
+                            Icon(
+                                Icons.Outlined.Home, 
+                                contentDescription = "Home",
+                                modifier = Modifier.size(26.dp)
+                            ) 
+                        },
+                        label = { 
+                            Text(
+                                "Home",
+                                style = MaterialTheme.typography.labelMedium
+                            ) 
+                        },
                         selected = false,
                         onClick = onNavigateToHome,
                         colors = NavigationBarItemDefaults.colors(
-                            unselectedIconColor = textGray,
-                            unselectedTextColor = textGray
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Chat AI") },
-                        label = { Text("Chat AI") },
+                        icon = { 
+                            Icon(
+                                Icons.AutoMirrored.Filled.Chat, 
+                                contentDescription = "Chat AI",
+                                modifier = Modifier.size(26.dp)
+                            ) 
+                        },
+                        label = { 
+                            Text(
+                                "Chat AI",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            ) 
+                        },
                         selected = true,
                         onClick = { /* Already on Chat */ },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = primaryGreen,
-                            selectedTextColor = primaryGreen,
-                            indicatorColor = Color(0xFFE8F5E9)
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
-                        label = { Text("Profile") },
+                        icon = { 
+                            Icon(
+                                Icons.Outlined.Person, 
+                                contentDescription = "Profile",
+                                modifier = Modifier.size(26.dp)
+                            ) 
+                        },
+                        label = { 
+                            Text(
+                                "Profile",
+                                style = MaterialTheme.typography.labelMedium
+                            ) 
+                        },
                         selected = false,
                         onClick = onNavigateToProfile,
                         colors = NavigationBarItemDefaults.colors(
-                            unselectedIconColor = textGray,
-                            unselectedTextColor = textGray
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     )
                 }
             }
         },
-        containerColor = backgroundGray
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             state = listState,
@@ -426,15 +477,14 @@ fun AiMessageItem(message: ChatMessage) {
         ) {
             Text(
                 text = "Agri Assistant",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF4CAF50)
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
             )
             if (message.isStreaming) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(12.dp),
                     strokeWidth = 2.dp,
-                    color = Color(0xFF4CAF50)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -445,10 +495,10 @@ fun AiMessageItem(message: ChatMessage) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF4CAF50)),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                Text("AI", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("AI", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -461,15 +511,15 @@ fun AiMessageItem(message: ChatMessage) {
                     bottomEnd = 16.dp,
                     bottomStart = 16.dp
                 ),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shadowElevation = 1.dp,
-                modifier = Modifier.widthIn(max = 280.dp) // Approx 75% of screen width
+                modifier = Modifier.widthIn(max = 280.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = message.content,
-                        fontSize = 15.sp,
-                        color = Color(0xFF1A1A1A),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 21.sp
                     )
                     if (message.isStreaming) {
@@ -477,7 +527,7 @@ fun AiMessageItem(message: ChatMessage) {
                         Text(
                             text = "●",
                             fontSize = 12.sp,
-                            color = Color(0xFF4CAF50),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.align(Alignment.End)
                         )
                     }
@@ -498,9 +548,9 @@ fun UserMessageItem(message: ChatMessage) {
         // Label "You"
         Text(
             text = "You",
-            fontSize = 11.sp,
-            color = Color(0xFF9E9E9E),
-            modifier = Modifier.padding(bottom = 4.dp, end = 48.dp) // Align with bubble start
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp, end = 48.dp)
         )
 
         Row(
@@ -516,14 +566,14 @@ fun UserMessageItem(message: ChatMessage) {
                     bottomEnd = 16.dp,
                     bottomStart = 16.dp
                 ),
-                color = Color(0xFF4CAF50),
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 1.dp,
                 modifier = Modifier.widthIn(max = 280.dp)
             ) {
                 Text(
                     text = message.content,
-                    fontSize = 15.sp,
-                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     lineHeight = 21.sp,
                     modifier = Modifier.padding(12.dp)
                 )
@@ -536,10 +586,10 @@ fun UserMessageItem(message: ChatMessage) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2196F3)),
+                    .background(MaterialTheme.colorScheme.secondary),
                 contentAlignment = Alignment.Center
             ) {
-                Text("U", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("U", color = MaterialTheme.colorScheme.onSecondary, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -550,4 +600,3 @@ fun UserMessageItem(message: ChatMessage) {
 fun ChatScreenPreview() {
     ChatScreen()
 }
-

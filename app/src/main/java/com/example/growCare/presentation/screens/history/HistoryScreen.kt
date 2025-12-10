@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,8 +35,8 @@ fun HistoryScreen(
     onNavigateToFertilizerResult: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val primaryGreen = Color(0xFF4CAF50)
-    val backgroundGray = Color(0xFFF8F9FA)
+    val primaryGreen = MaterialTheme.colorScheme.primary
+    val backgroundGray = MaterialTheme.colorScheme.background
     
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("All", "Disease", "Seeds", "Fertilizer", "Chat")
@@ -51,16 +52,21 @@ fun HistoryScreen(
                     Text(
                         "Activity History",
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -74,7 +80,7 @@ fun HistoryScreen(
             // Tabs
             ScrollableTabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = primaryGreen,
                 edgePadding = 16.dp
             ) {
@@ -132,13 +138,13 @@ fun HistoryScreen(
                                 imageVector = Icons.Default.History,
                                 contentDescription = null,
                                 modifier = Modifier.size(64.dp),
-                                tint = Color.Gray
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 "No history yet",
                                 fontSize = 16.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -173,7 +179,7 @@ fun HistoryCard(
     item: HistoryItem,
     onClick: () -> Unit
 ) {
-    val primaryGreen = Color(0xFF4CAF50)
+    val primaryGreen = MaterialTheme.colorScheme.primary
     
     Card(
         modifier = Modifier
@@ -181,7 +187,7 @@ fun HistoryCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -194,7 +200,7 @@ fun HistoryCard(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(item.getColor().copy(alpha = 0.1f)),
+                    .background(item.getColor().copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -213,20 +219,20 @@ fun HistoryCard(
                     text = item.title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = item.subtitle,
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = formatDate(item.timestamp),
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -234,7 +240,7 @@ fun HistoryCard(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.Gray
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -257,14 +263,14 @@ data class HistoryItem(
         HistoryType.DISEASE -> Icons.Default.BugReport
         HistoryType.SEED -> Icons.Default.Eco
         HistoryType.FERTILIZER -> Icons.Default.Science
-        HistoryType.CHAT -> Icons.Default.Chat
+        HistoryType.CHAT -> Icons.AutoMirrored.Filled.Chat
     }
     
     fun getColor(): Color = when (type) {
-        HistoryType.DISEASE -> Color(0xFFF44336)
-        HistoryType.SEED -> Color(0xFF4CAF50)
-        HistoryType.FERTILIZER -> Color(0xFF2196F3)
-        HistoryType.CHAT -> Color(0xFFFF9800)
+        HistoryType.DISEASE -> com.example.growCare.ui.theme.DiseaseRed
+        HistoryType.SEED -> com.example.growCare.ui.theme.SuccessGreen
+        HistoryType.FERTILIZER -> com.example.growCare.ui.theme.InfoBlue
+        HistoryType.CHAT -> com.example.growCare.ui.theme.ChatOrange
     }
 }
 

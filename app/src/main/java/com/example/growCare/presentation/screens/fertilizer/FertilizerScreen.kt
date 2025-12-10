@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,11 +72,12 @@ fun FertilizerScreen(
     val growthStages = listOf("Vegetative", "Flowering", "Fruiting", "Maturity")
     val soilTypes = listOf("Loamy", "Sandy", "Clay", "Silt", "Peaty")
 
-    val primaryBlue = Color(0xFF2196F3)
-    val secondaryGreen = Color(0xFF4CAF50)
-    val textBlack = Color(0xFF1A1A1A)
-    val textGray = Color(0xFF757575)
-    val backgroundGray = Color(0xFFF5F5F5)
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val textBlack = MaterialTheme.colorScheme.onSurface
+    val textGray = MaterialTheme.colorScheme.onSurfaceVariant
+    val backgroundGray = MaterialTheme.colorScheme.background
+    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
 
     Scaffold(
         topBar = {
@@ -85,7 +87,7 @@ fun FertilizerScreen(
                         text = "Fertilizer Recipe",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = textBlack
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -93,7 +95,7 @@ fun FertilizerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.Black
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -102,19 +104,19 @@ fun FertilizerScreen(
                         Icon(
                             imageVector = Icons.Default.Share,
                             contentDescription = "Share",
-                            tint = primaryBlue
+                            tint = primaryColor
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 modifier = Modifier.shadow(elevation = 2.dp)
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp,
                 modifier = Modifier.height(80.dp) // Adjusted height to accommodate standard touch targets
             ) {
@@ -134,8 +136,8 @@ fun FertilizerScreen(
                     selected = true,
                     onClick = { /* TODO */ },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = primaryBlue,
-                        selectedTextColor = primaryBlue,
+                        selectedIconColor = primaryColor,
+                        selectedTextColor = primaryColor,
                         indicatorColor = Color.Transparent // Removing indicator background for cleaner look or match spec
                     )
                 )
@@ -162,14 +164,14 @@ fun FertilizerScreen(
             // Tab Layout
             TabRow(
                 selectedTabIndex = selectedTabIndex,
-                containerColor = Color.White,
-                contentColor = primaryBlue,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = primaryColor,
                 indicator = {}, // Hide default indicator
                 divider = {},
                 modifier = Modifier
                     .padding(top = 8.dp, start = 16.dp, end = 16.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
+                    .border(1.dp, surfaceVariant, RoundedCornerShape(8.dp))
             ) {
                 val tabs = listOf("By Crop Type", "Manual Input")
                 tabs.forEachIndexed { index, title ->
@@ -178,7 +180,7 @@ fun FertilizerScreen(
                         onClick = { selectedTabIndex = index },
                         modifier = Modifier
                             .background(
-                                if (selectedTabIndex == index) primaryBlue else Color.White
+                                if (selectedTabIndex == index) primaryColor else MaterialTheme.colorScheme.surface
                             ),
                         text = {
                             Text(
@@ -186,7 +188,7 @@ fun FertilizerScreen(
                                 fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
                             )
                         },
-                        selectedContentColor = Color.White,
+                        selectedContentColor = MaterialTheme.colorScheme.onPrimary,
                         unselectedContentColor = textGray
                     )
                 }
@@ -222,17 +224,17 @@ fun FertilizerScreen(
                                 .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                             shape = RoundedCornerShape(8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White,
-                                focusedBorderColor = primaryBlue,
-                                unfocusedBorderColor = Color(0xFFE0E0E0)
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
                             ),
                             isError = uiState.cropTypeError != null
                         )
                         ExposedDropdownMenu(
                             expanded = cropTypeExpanded,
                             onDismissRequest = { cropTypeExpanded = false },
-                            modifier = Modifier.background(Color.White)
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             cropTypes.forEach { item ->
                                 DropdownMenuItem(
@@ -287,16 +289,16 @@ fun FertilizerScreen(
                                     .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedBorderColor = primaryBlue,
-                                    unfocusedBorderColor = Color(0xFFE0E0E0)
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    focusedBorderColor = primaryColor,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
                             )
                             ExposedDropdownMenu(
                                 expanded = growthStageExpanded,
                                 onDismissRequest = { growthStageExpanded = false },
-                                modifier = Modifier.background(Color.White)
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                             ) {
                                 growthStages.forEach { item ->
                                     DropdownMenuItem(
@@ -334,16 +336,16 @@ fun FertilizerScreen(
                                     .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White,
-                                    focusedBorderColor = primaryBlue,
-                                    unfocusedBorderColor = Color(0xFFE0E0E0)
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    focusedBorderColor = primaryColor,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
                             )
                             ExposedDropdownMenu(
                                 expanded = soilTypeExpanded,
                                 onDismissRequest = { soilTypeExpanded = false },
-                                modifier = Modifier.background(Color.White)
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                             ) {
                                 soilTypes.forEach { item ->
                                     DropdownMenuItem(
@@ -371,16 +373,19 @@ fun FertilizerScreen(
                     value = uiState.areaSize,
                     onValueChange = { viewModel.onAction(FertilizerAction.UpdateAreaSize(it)) },
                     placeholder = { Text("e.g. 50", color = textGray) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Done
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedBorderColor = primaryBlue,
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     singleLine = true,
                     isError = uiState.areaSizeError != null
@@ -414,7 +419,7 @@ fun FertilizerScreen(
                         text = "${uiState.targetYield.toInt()} bu/ac",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = secondaryGreen
+                        color = secondaryColor
                     )
                 }
 
@@ -423,9 +428,9 @@ fun FertilizerScreen(
                     onValueChange = { viewModel.onAction(FertilizerAction.UpdateTargetYield(it)) },
                     valueRange = 100f..250f,
                     colors = SliderDefaults.colors(
-                        thumbColor = secondaryGreen,
-                        activeTrackColor = secondaryGreen,
-                        inactiveTrackColor = Color(0xFFE0E0E0)
+                        thumbColor = secondaryColor,
+                        activeTrackColor = secondaryColor,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.padding(bottom = 0.dp)
                 )
@@ -448,8 +453,8 @@ fun FertilizerScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = primaryBlue,
-                        contentColor = Color.White
+                        containerColor = primaryColor,
+                        contentColor = MaterialTheme.colorScheme.surface
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     enabled = !uiState.isCalculating
@@ -457,7 +462,7 @@ fun FertilizerScreen(
                     if (uiState.isCalculating) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.surface
                         )
                     } else {
                         Text(

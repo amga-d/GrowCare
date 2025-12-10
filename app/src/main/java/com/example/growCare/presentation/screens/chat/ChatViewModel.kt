@@ -67,7 +67,7 @@ class ChatViewModel @Inject constructor(
     /**
      * Send text message to AI
      */
-    private fun sendMessage(message: String) {
+    fun sendMessage(message: String) {
         if (message.isBlank()) return
         
         // Prevent sending if already sending

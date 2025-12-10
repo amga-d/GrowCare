@@ -141,7 +141,7 @@ fun SuccessAnimation(
             Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .background(Color(0xFF4CAF50), CircleShape),
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -158,7 +158,7 @@ fun SuccessAnimation(
                 text = message,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4CAF50)
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

@@ -27,6 +27,9 @@ geminiAi = "0.1.2"
 # Database
 room = "2.6.1"
 
+# DataStore
+datastorePreferences = "1.1.1"
+
 # Image Loading
 coil = "2.5.0"
 
@@ -85,6 +88,9 @@ generativeai = { group = "com.google.ai.client.generativeai", name = "generative
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# DataStore Preferences
+datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 
 # CameraX
 camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }

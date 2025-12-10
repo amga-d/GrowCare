@@ -6,7 +6,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,14 +27,16 @@ fun SeedResultScreen(
     analysis: SeedQuality,
     imageUrl: String?,
     onNavigateBack: () -> Unit,
+    onScanAnother: () -> Unit = onNavigateBack,
+    onNavigateToHome: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
     
     val qualityColor = when {
-        analysis.qualityScore >= 80 -> Color(0xFF4CAF50)
-        analysis.qualityScore >= 60 -> Color(0xFFFFC107)
-        else -> Color(0xFFF44336)
+        analysis.qualityScore >= 80 -> com.example.growCare.ui.theme.SuccessGreen
+        analysis.qualityScore >= 60 -> com.example.growCare.ui.theme.SecondaryAmber
+        else -> com.example.growCare.ui.theme.DiseaseRed
     }
     
     val qualityLabel = when {
@@ -47,15 +51,27 @@ fun SeedResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Seed Quality Analysis", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Seed Quality Analysis", 
+                        fontSize = 18.sp, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = modifier
@@ -80,8 +96,8 @@ fun SeedResultScreen(
                     
                     if (analysis.isRecommendedForUse) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                            Text("Recommended for Use", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
+                            Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Text("Recommended for Use", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -100,7 +116,7 @@ fun SeedResultScreen(
 
             // Recommendations
             if (analysis.recommendations.isNotEmpty()) {
-                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)), shape = RoundedCornerShape(12.dp)) {
+                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(12.dp)) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Recommendations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         analysis.recommendations.forEach { recommendation ->
@@ -121,6 +137,51 @@ fun SeedResultScreen(
                     }
                 }
             }
+            
+            // Action Buttons
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onNavigateToHome,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Home, 
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Home", fontWeight = FontWeight.SemiBold)
+                }
+                
+                Button(
+                    onClick = onScanAnother,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.CameraAlt, 
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Scan Another", fontWeight = FontWeight.SemiBold)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

@@ -149,9 +149,9 @@ class SeedViewModel @Inject constructor(
      */
     fun getQualityColor(score: Int): androidx.compose.ui.graphics.Color {
         return when {
-            score >= 80 -> androidx.compose.ui.graphics.Color(0xFF4CAF50) // Green
-            score >= 60 -> androidx.compose.ui.graphics.Color(0xFFFFC107) // Yellow
-            else -> androidx.compose.ui.graphics.Color(0xFFF44336) // Red
+            score >= 80 -> com.example.growCare.ui.theme.SuccessGreen
+            score >= 60 -> com.example.growCare.ui.theme.SecondaryAmber
+            else -> com.example.growCare.ui.theme.DiseaseRed
         }
     }
 

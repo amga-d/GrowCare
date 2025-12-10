@@ -102,6 +102,9 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     
+    // DataStore Preferences
+    implementation(libs.datastore.preferences)
+    
     // Retrofit & OkHttp
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
