@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.growCare.domain.model.ChatMessage
+import com.example.growCare.domain.usecase.chat.GetAllConversationsUseCase
 import com.example.growCare.domain.usecase.chat.GetChatHistoryUseCase
 import com.example.growCare.domain.usecase.chat.SendChatMessageUseCase
 import com.example.growCare.domain.usecase.chat.SendMessageWithImageUseCase
@@ -20,7 +21,8 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val sendChatMessageUseCase: SendChatMessageUseCase,
     private val sendMessageWithImageUseCase: SendMessageWithImageUseCase,
-    private val getChatHistoryUseCase: GetChatHistoryUseCase
+    private val getChatHistoryUseCase: GetChatHistoryUseCase,
+    private val getAllConversationsUseCase: GetAllConversationsUseCase
 ) : ViewModel() {
 
     // UI State
@@ -240,26 +242,19 @@ class ChatViewModel @Inject constructor(
     private fun loadAllConversations() {
         viewModelScope.launch {
             try {
-                getChatHistoryUseCase("all").collect { messages ->
-                    // Group messages by conversation ID
-                    val conversations = messages
-                        .groupBy { it.conversationId ?: "default" }
-                        .map { (conversationId, msgs) ->
-                            val firstMsg = msgs.firstOrNull()
-                            val lastMsg = msgs.lastOrNull()
-                            ConversationItem(
-                                id = conversationId,
-                                title = firstMsg?.content?.take(30).orEmpty() + 
-                                    if ((firstMsg?.content?.length ?: 0) > 30) "..." else "",
-                                lastMessage = lastMsg?.content?.take(50).orEmpty() + 
-                                    if ((lastMsg?.content?.length ?: 0) > 50) "..." else "",
-                                timestamp = lastMsg?.timestamp ?: 0L,
-                                messageCount = msgs.size
-                            )
-                        }
-                        .sortedByDescending { it.timestamp }
+                getAllConversationsUseCase().collect { conversations ->
+                    // Convert Conversation to ConversationItem
+                    val conversationItems = conversations.map { conv ->
+                        ConversationItem(
+                            id = conv.id,
+                            title = conv.title,
+                            lastMessage = conv.lastMessage,
+                            timestamp = conv.lastMessageTime,
+                            messageCount = conv.messageCount
+                        )
+                    }
                     
-                    _uiState.update { it.copy(conversations = conversations) }
+                    _uiState.update { it.copy(conversations = conversationItems) }
                 }
             } catch (e: Exception) {
                 _events.emit(ChatEvent.ShowError(e.message ?: "Failed to load conversations"))

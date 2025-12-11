@@ -24,7 +24,8 @@ interface FertilizerRepository {
         soilType: String,
         area: Double,
         currentNPK: NPK,
-        targetYield: Double? = null
+        targetYield: Double? = null,
+        growthStage: String? = null
     ): Result<FertilizerRecommendation>
     
     /**

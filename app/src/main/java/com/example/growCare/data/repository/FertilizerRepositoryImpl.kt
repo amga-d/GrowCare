@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,7 +33,8 @@ class FertilizerRepositoryImpl @Inject constructor(
         soilType: String,
         area: Double,
         currentNPK: NPK,
-        targetYield: Double?
+        targetYield: Double?,
+        growthStage: String?
     ): Result<FertilizerRecommendation> {
         return try {
             val userId = getCurrentUserId()
@@ -42,7 +44,9 @@ class FertilizerRepositoryImpl @Inject constructor(
                 cropType = cropType,
                 soilType = soilType,
                 area = area,
-                currentNPK = currentNPK.toRatioString()
+                currentNPK = currentNPK.toRatioString(),
+                targetYield = targetYield,
+                growthStage = growthStage
             )
             
             if (recommendationResult.isFailure) {
@@ -155,6 +159,38 @@ class FertilizerRepositoryImpl @Inject constructor(
             "tomato" -> NPK(nitrogen = 150.0, phosphorus = 80.0, potassium = 180.0)
             "potato" -> NPK(nitrogen = 120.0, phosphorus = 80.0, potassium = 150.0)
             "sugarcane" -> NPK(nitrogen = 200.0, phosphorus = 80.0, potassium = 100.0)
+            "barley" -> NPK(90.0, 40.0, 40.0)
+            "oats" -> NPK(70.0, 30.0, 40.0)
+            "sorghum" -> NPK(100.0, 40.0, 40.0)
+            "millet" -> NPK(60.0, 30.0, 30.0)
+            "groundnut", "peanut" -> NPK(20.0, 40.0, 50.0)
+            "sunflower" -> NPK(80.0, 60.0, 80.0)
+            "rapeseed", "canola" -> NPK(90.0, 60.0, 60.0)
+            "mustard" -> NPK(80.0, 40.0, 40.0)
+            "chickpea", "gram" -> NPK(25.0, 50.0, 40.0)
+            "lentil" -> NPK(20.0, 40.0, 30.0)
+            "pigeonpea" -> NPK(25.0, 50.0, 40.0)
+            "bean", "common bean" -> NPK(30.0, 50.0, 40.0)
+            "cowpea" -> NPK(25.0, 40.0, 40.0)
+            "cassava" -> NPK(80.0, 20.0, 120.0)
+            "yam" -> NPK(80.0, 40.0, 100.0)
+            "sweet potato" -> NPK(60.0, 50.0, 90.0)
+            "banana", "plantain" -> NPK(150.0, 50.0, 200.0)
+            "apple" -> NPK(60.0, 30.0, 80.0)
+            "grape" -> NPK(80.0, 40.0, 80.0)
+            "citrus", "orange", "lemon" -> NPK(120.0, 60.0, 120.0)
+            "mango" -> NPK(80.0, 40.0, 100.0)
+            "tea" -> NPK(80.0, 40.0, 80.0)
+            "coffee" -> NPK(120.0, 60.0, 120.0)
+            "cocoa" -> NPK(120.0, 60.0, 120.0)
+            "onion" -> NPK(100.0, 50.0, 100.0)
+            "garlic" -> NPK(80.0, 40.0, 80.0)
+            "pepper", "chili" -> NPK(120.0, 60.0, 120.0)
+            "eggplant", "brinjal" -> NPK(100.0, 50.0, 120.0)
+            "cabbage" -> NPK(120.0, 60.0, 120.0)
+            "cauliflower" -> NPK(100.0, 60.0, 100.0)
+            "lettuce" -> NPK(80.0, 40.0, 80.0)
+            "carrot" -> NPK(80.0, 50.0, 120.0)
             else -> NPK(nitrogen = 100.0, phosphorus = 50.0, potassium = 50.0) // Default
         }
         return Result.success(requirements)
@@ -204,8 +240,132 @@ class FertilizerRepositoryImpl @Inject constructor(
         currentNPK: NPK,
         targetYield: Double?
     ): FertilizerRecommendation {
+        // Try JSON-first parsing for reliability
+        try {
+            val root = JSONObject(analysisText)
+
+            val recommendedJson = root.optJSONObject("recommendedNPK") ?: JSONObject()
+            val recommendedN = recommendedJson.optDouble("nitrogen", 100.0)
+            val recommendedP = recommendedJson.optDouble("phosphorus", 50.0)
+            val recommendedK = recommendedJson.optDouble("potassium", 50.0)
+
+            val gapJson = root.optJSONObject("npkGap") ?: JSONObject()
+            val gapN = gapJson.optDouble("nitrogen", recommendedN - currentNPK.nitrogen)
+            val gapP = gapJson.optDouble("phosphorus", recommendedP - currentNPK.phosphorus)
+            val gapK = gapJson.optDouble("potassium", recommendedK - currentNPK.potassium)
+
+            val productsJson = root.optJSONArray("products")
+            val products = mutableListOf<FertilizerProduct>()
+            if (productsJson != null) {
+                for (i in 0 until productsJson.length()) {
+                    val item = productsJson.optJSONObject(i) ?: continue
+                    val npkObj = item.optJSONObject("npkRatio") ?: JSONObject()
+                    val perAcreQty = item.optDouble("quantityKgPerAcre", 0.0)
+                    val qtyTotal = perAcreQty * area
+                    val price = item.optDouble("pricePerKg", 0.0)
+                    products.add(
+                        FertilizerProduct(
+                            name = item.optString("name", "NPK Blend"),
+                            npkRatio = NPK(
+                                nitrogen = npkObj.optDouble("nitrogen", 0.0),
+                                phosphorus = npkObj.optDouble("phosphorus", 0.0),
+                                potassium = npkObj.optDouble("potassium", 0.0)
+                            ),
+                            quantityNeeded = qtyTotal,
+                            pricePerKg = price,
+                            totalCost = qtyTotal * price,
+                            applicationMethod = item.optString("applicationMethod", "Broadcast and incorporate"),
+                            isOrganic = item.optBoolean("isOrganic", false)
+                        )
+                    )
+                }
+            }
+
+            val scheduleJson = root.optJSONArray("applicationSchedule")
+            val schedule = mutableListOf<ApplicationPhase>()
+            if (scheduleJson != null) {
+                for (i in 0 until scheduleJson.length()) {
+                    val item = scheduleJson.optJSONObject(i) ?: continue
+                    val npkObj = item.optJSONObject("npkRatio") ?: JSONObject()
+                    val perAcreQty = item.optDouble("quantityKgPerAcre", 0.0)
+                    val qtyTotal = perAcreQty * area
+                    schedule.add(
+                        ApplicationPhase(
+                            phase = item.optString("phase", "Application"),
+                            daysAfterPlanting = item.optInt("daysAfterPlanting", 0),
+                            npkRatio = NPK(
+                                nitrogen = npkObj.optDouble("nitrogen", 0.0),
+                                phosphorus = npkObj.optDouble("phosphorus", 0.0),
+                                potassium = npkObj.optDouble("potassium", 0.0)
+                            ),
+                            quantity = qtyTotal,
+                            instructions = item.optString("instructions", "Apply evenly")
+                        )
+                    )
+                }
+            }
+
+            val estimatedCostPerAcre = root.optDouble("estimatedCostPerAcre", 0.0)
+            val organicAlts = root.optJSONArray("organicAlternatives")
+                ?.let { arr ->
+                    (0 until arr.length()).mapNotNull { idx -> arr.optString(idx, null) }
+                } ?: emptyList()
+            val additionalNotes = root.optString("additionalNotes", "")
+
+            val estimatedCostTotal = if (estimatedCostPerAcre > 0) estimatedCostPerAcre * area else
+                products.sumOf { it.totalCost }
+
+            val gapNote = "N gap: ${"%.1f".format(gapN)} | P gap: ${"%.1f".format(gapP)} | K gap: ${"%.1f".format(gapK)}"
+
+            return FertilizerRecommendation(
+                id = UUID.randomUUID().toString(),
+                userId = userId,
+                cropType = cropType,
+                soilType = soilType,
+                area = area,
+                currentNPK = currentNPK,
+                targetYield = targetYield,
+                recommendedNPK = NPK(recommendedN, recommendedP, recommendedK),
+                fertilizerProducts = if (products.isNotEmpty()) products else listOf(
+                    FertilizerProduct(
+                        name = "NPK ${recommendedN.toInt()}-${recommendedP.toInt()}-${recommendedK.toInt()}",
+                        npkRatio = NPK(recommendedN, recommendedP, recommendedK),
+                        quantityNeeded = area * 50,
+                        pricePerKg = 2.5,
+                        totalCost = area * 50 * 2.5,
+                        applicationMethod = "Broadcast evenly and incorporate into soil",
+                        isOrganic = false
+                    )
+                ),
+                applicationSchedule = if (schedule.isNotEmpty()) schedule else listOf(
+                    ApplicationPhase(
+                        phase = "Pre-planting",
+                        daysAfterPlanting = 0,
+                        npkRatio = NPK(recommendedN * 0.5, recommendedP, recommendedK * 0.5),
+                        quantity = area * 25,
+                        instructions = "Apply before planting and incorporate into soil"
+                    ),
+                    ApplicationPhase(
+                        phase = "Mid-season",
+                        daysAfterPlanting = 30,
+                        npkRatio = NPK(recommendedN * 0.5, 0.0, recommendedK * 0.5),
+                        quantity = area * 25,
+                        instructions = "Side-dress application around plants"
+                    )
+                ),
+                estimatedCost = estimatedCostTotal,
+                organicAlternatives = organicAlts,
+                additionalNotes = listOf(additionalNotes, gapNote)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" | ")
+                    .ifBlank { null }
+            )
+        } catch (_: Exception) {
+            // Fallback to legacy text parsing to avoid hard failure
+        }
+
+        // Legacy fallback parsing (simple heuristic)
         val lines = analysisText.lines().filter { it.isNotBlank() }
-        
         var recommendedN = 100.0
         var recommendedP = 50.0
         var recommendedK = 50.0
@@ -214,17 +374,13 @@ class FertilizerRepositoryImpl @Inject constructor(
         var estimatedCost = 0.0
         val organicAlts = mutableListOf<String>()
         var additionalNotes = ""
-        
         var currentSection = ""
-        
         for (line in lines) {
             val trimmedLine = line.trim()
-            
             when {
                 trimmedLine.contains("Recommended NPK", ignoreCase = true) ||
                 trimmedLine.contains("NPK Requirements", ignoreCase = true) -> {
                     currentSection = "npk"
-                    // Try to extract NPK values
                     val numbers = Regex("\\d+\\.?\\d*").findAll(trimmedLine).toList()
                     if (numbers.size >= 3) {
                         recommendedN = numbers[0].value.toDoubleOrNull() ?: recommendedN
@@ -232,8 +388,7 @@ class FertilizerRepositoryImpl @Inject constructor(
                         recommendedK = numbers[2].value.toDoubleOrNull() ?: recommendedK
                     }
                 }
-                trimmedLine.contains("Product", ignoreCase = true) && 
-                !trimmedLine.contains("organic", ignoreCase = true) -> {
+                trimmedLine.contains("Product", ignoreCase = true) && !trimmedLine.contains("organic", ignoreCase = true) -> {
                     currentSection = "products"
                 }
                 trimmedLine.contains("Schedule", ignoreCase = true) ||
@@ -242,7 +397,6 @@ class FertilizerRepositoryImpl @Inject constructor(
                 }
                 trimmedLine.contains("Cost", ignoreCase = true) -> {
                     currentSection = "cost"
-                    // Extract cost
                     val numbers = Regex("\\d+\\.?\\d*").findAll(trimmedLine).toList()
                     if (numbers.isNotEmpty()) {
                         estimatedCost = numbers.first().value.toDoubleOrNull() ?: 0.0
@@ -260,89 +414,85 @@ class FertilizerRepositoryImpl @Inject constructor(
                     if (content.isNotEmpty() && !content.startsWith("#") && !content.startsWith("**")) {
                         when (currentSection) {
                             "products" -> {
-                                // Try to parse product info
-                                if (content.isNotBlank()) {
-                                    // Simple product extraction
-                                    val numbers = Regex("\\d+").findAll(content).toList()
-                                    if (numbers.size >= 3) {
-                                        val n = numbers[0].value.toDoubleOrNull() ?: 0.0
-                                        val p = numbers[1].value.toDoubleOrNull() ?: 0.0
-                                        val k = numbers[2].value.toDoubleOrNull() ?: 0.0
-                                        
-                                        products.add(FertilizerProduct(
+                                val numbers = Regex("\\d+").findAll(content).toList()
+                                if (numbers.size >= 3) {
+                                    val n = numbers[0].value.toDoubleOrNull() ?: 0.0
+                                    val p = numbers[1].value.toDoubleOrNull() ?: 0.0
+                                    val k = numbers[2].value.toDoubleOrNull() ?: 0.0
+                                    products.add(
+                                        FertilizerProduct(
                                             name = content.split("-").firstOrNull()?.trim() ?: "NPK Fertilizer",
                                             npkRatio = NPK(n, p, k),
-                                            quantityNeeded = area * 50, // Rough estimate
+                                            quantityNeeded = area * 50,
                                             pricePerKg = 2.5,
                                             totalCost = area * 50 * 2.5,
                                             applicationMethod = "Broadcast and incorporate",
                                             isOrganic = false
-                                        ))
-                                    }
+                                        )
+                                    )
                                 }
                             }
                             "schedule" -> {
-                                // Add to schedule if contains days or phase info
-                                if (content.contains("day", ignoreCase = true) || 
-                                    content.contains("planting", ignoreCase = true)) {
+                                if (content.contains("day", ignoreCase = true) || content.contains("planting", ignoreCase = true)) {
                                     val numbers = Regex("\\d+").findAll(content).toList()
                                     val days = numbers.firstOrNull()?.value?.toIntOrNull() ?: 0
-                                    
-                                    schedule.add(ApplicationPhase(
-                                        phase = content.split("-").firstOrNull()?.trim() ?: "Application",
-                                        daysAfterPlanting = days,
-                                        npkRatio = NPK(recommendedN / 3, recommendedP / 3, recommendedK / 3),
-                                        quantity = area * 20,
-                                        instructions = content
-                                    ))
+                                    schedule.add(
+                                        ApplicationPhase(
+                                            phase = content.split("-").firstOrNull()?.trim() ?: "Application",
+                                            daysAfterPlanting = days,
+                                            npkRatio = NPK(recommendedN / 3, recommendedP / 3, recommendedK / 3),
+                                            quantity = area * 20,
+                                            instructions = content
+                                        )
+                                    )
                                 }
                             }
-                            "organic" -> {
-                                if (content.isNotBlank()) {
-                                    organicAlts.add(content)
-                                }
-                            }
-                            "notes" -> {
-                                additionalNotes += "$content "
-                            }
+                            "organic" -> if (content.isNotBlank()) organicAlts.add(content)
+                            "notes" -> additionalNotes += "$content "
                         }
                     }
                 }
             }
         }
-        
-        // If no products found, create a default one
+
         if (products.isEmpty()) {
-            products.add(FertilizerProduct(
-                name = "NPK ${recommendedN.toInt()}-${recommendedP.toInt()}-${recommendedK.toInt()}",
-                npkRatio = NPK(recommendedN, recommendedP, recommendedK),
-                quantityNeeded = area * 50,
-                pricePerKg = 2.5,
-                totalCost = area * 50 * 2.5,
-                applicationMethod = "Broadcast evenly and incorporate into soil",
-                isOrganic = false
-            ))
+            products.add(
+                FertilizerProduct(
+                    name = "NPK ${recommendedN.toInt()}-${recommendedP.toInt()}-${recommendedK.toInt()}",
+                    npkRatio = NPK(recommendedN, recommendedP, recommendedK),
+                    quantityNeeded = area * 50,
+                    pricePerKg = 2.5,
+                    totalCost = area * 50 * 2.5,
+                    applicationMethod = "Broadcast evenly and incorporate into soil",
+                    isOrganic = false
+                )
+            )
             estimatedCost = area * 50 * 2.5
         }
-        
-        // If no schedule, create basic one
+
         if (schedule.isEmpty()) {
-            schedule.add(ApplicationPhase(
-                phase = "Pre-planting",
-                daysAfterPlanting = 0,
-                npkRatio = NPK(recommendedN * 0.5, recommendedP, recommendedK * 0.5),
-                quantity = area * 25,
-                instructions = "Apply before planting and incorporate into soil"
-            ))
-            schedule.add(ApplicationPhase(
-                phase = "Mid-season",
-                daysAfterPlanting = 30,
-                npkRatio = NPK(recommendedN * 0.5, 0.0, recommendedK * 0.5),
-                quantity = area * 25,
-                instructions = "Side-dress application around plants"
-            ))
+            schedule.add(
+                ApplicationPhase(
+                    phase = "Pre-planting",
+                    daysAfterPlanting = 0,
+                    npkRatio = NPK(recommendedN * 0.5, recommendedP, recommendedK * 0.5),
+                    quantity = area * 25,
+                    instructions = "Apply before planting and incorporate into soil"
+                )
+            )
+            schedule.add(
+                ApplicationPhase(
+                    phase = "Mid-season",
+                    daysAfterPlanting = 30,
+                    npkRatio = NPK(recommendedN * 0.5, 0.0, recommendedK * 0.5),
+                    quantity = area * 25,
+                    instructions = "Side-dress application around plants"
+                )
+            )
         }
-        
+
+        val gapNote = "N gap: ${"%.1f".format(recommendedN - currentNPK.nitrogen)} | P gap: ${"%.1f".format(recommendedP - currentNPK.phosphorus)} | K gap: ${"%.1f".format(recommendedK - currentNPK.potassium)}"
+
         return FertilizerRecommendation(
             id = UUID.randomUUID().toString(),
             userId = userId,
@@ -356,7 +506,10 @@ class FertilizerRepositoryImpl @Inject constructor(
             applicationSchedule = schedule,
             estimatedCost = estimatedCost,
             organicAlternatives = organicAlts,
-            additionalNotes = additionalNotes.trim().ifEmpty { null }
+            additionalNotes = listOf(additionalNotes.trim(), gapNote)
+                .filter { it.isNotBlank() }
+                .joinToString(" | ")
+                .ifBlank { null }
         )
     }
 

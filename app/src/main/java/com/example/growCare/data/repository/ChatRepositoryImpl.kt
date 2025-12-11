@@ -164,8 +164,44 @@ class ChatRepositoryImpl @Inject constructor(
     override fun getAllConversations(): Flow<List<Conversation>> = flow {
         try {
             val userId = getCurrentUserId()
-            // For now, return empty list - will implement conversation management later
-            emit(emptyList())
+            val result = firestoreDataSource.getAllConversations(userId)
+            
+            if (result.isSuccess) {
+                val conversationsData = result.getOrNull() ?: emptyList()
+                val conversations = conversationsData.map { data ->
+                    val conversationId = data["id"] as? String ?: ""
+                    val lastMessage = data["lastMessage"] as? String ?: ""
+                    val lastMessageTime = data["lastMessageTime"] as? Long ?: 0L
+                    val messageCount = data["messageCount"] as? Int ?: 0
+                    
+                    // Create title from conversation ID or first message
+                    val title = if (conversationId.startsWith("chat_")) {
+                        // Extract timestamp and format as date
+                        val timestamp = conversationId.removePrefix("chat_").toLongOrNull() ?: 0L
+                        if (timestamp > 0) {
+                            val date = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(timestamp))
+                            "Chat - $date"
+                        } else {
+                            "Chat"
+                        }
+                    } else {
+                        conversationId
+                    }
+                    
+                    Conversation(
+                        id = conversationId,
+                        title = title,
+                        lastMessage = lastMessage.take(100),
+                        lastMessageTime = lastMessageTime,
+                        messageCount = messageCount
+                    )
+                }.sortedByDescending { it.lastMessageTime }
+                
+                emit(conversations)
+            } else {
+                emit(emptyList())
+            }
         } catch (e: Exception) {
             emit(emptyList())
         }

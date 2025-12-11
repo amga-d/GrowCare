@@ -2,6 +2,7 @@ package com.example.growCare.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -18,6 +19,7 @@ import com.example.growCare.presentation.screens.home.HomeScreen
 import com.example.growCare.presentation.screens.profile.ProfileScreen
 import com.example.growCare.presentation.screens.seed.SeedScanScreen
 import com.example.growCare.presentation.screens.seed.SeedResultScreen
+import kotlinx.coroutines.launch
 
 /**
  * Navigation graph for the GrowCare application
@@ -180,7 +182,10 @@ fun NavGraph(
 
         // AI Chat assistant
         composable(Screen.CHAT) {
+            val chatViewModel: com.example.growCare.presentation.screens.chat.ChatViewModel = hiltViewModel()
+            
             ChatScreen(
+                viewModel = chatViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
@@ -191,6 +196,9 @@ fun NavGraph(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.PROFILE)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Screen.CHAT_HISTORY)
                 }
             )
         }
@@ -219,17 +227,31 @@ fun NavGraph(
         
         // Activity History
         composable(Screen.HISTORY) {
+            val historyViewModel: com.example.growCare.presentation.screens.history.HistoryViewModel = hiltViewModel()
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
+            
             com.example.growCare.presentation.screens.history.HistoryScreen(
+                viewModel = historyViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onNavigateToDiseaseResult = { diseaseId ->
-                    // TODO: Load disease from ID and navigate
-                    navController.navigate(Screen.DISEASE_RESULT)
+                    scope.launch {
+                        val analysis = historyViewModel.loadDiseaseById(diseaseId)
+                        if (analysis != null) {
+                            navigationViewModel.setDiseaseAnalysis(analysis, analysis.imageUrl)
+                            navController.navigate(Screen.DISEASE_RESULT)
+                        }
+                    }
                 },
                 onNavigateToSeedResult = { seedId ->
-                    // TODO: Load seed from ID and navigate
-                    navController.navigate(Screen.SEED_RESULT)
+                    scope.launch {
+                        val analysis = historyViewModel.loadSeedById(seedId)
+                        if (analysis != null) {
+                            navigationViewModel.setSeedAnalysis(analysis, analysis.imageUrl)
+                            navController.navigate(Screen.SEED_RESULT)
+                        }
+                    }
                 },
                 onNavigateToFertilizerResult = { fertilizerId ->
                     // TODO: Load fertilizer from ID and navigate
@@ -240,13 +262,23 @@ fun NavGraph(
         
         // Chat History
         composable(Screen.CHAT_HISTORY) {
+            val chatViewModel: com.example.growCare.presentation.screens.chat.ChatViewModel = hiltViewModel()
+            val scope = rememberCoroutineScope()
+            
             com.example.growCare.presentation.screens.chat.ChatHistoryScreen(
+                viewModel = chatViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onConversationClick = { conversationId ->
-                    // Load conversation and navigate to chat
-                    navController.navigate(Screen.CHAT)
+                    // Load conversation in ViewModel
+                    scope.launch {
+                        chatViewModel.onAction(
+                            com.example.growCare.presentation.screens.chat.ChatAction.LoadConversation(conversationId)
+                        )
+                    }
+                    // Navigate to chat
+                    navController.popBackStack()
                 }
             )
         }

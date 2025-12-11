@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -50,7 +51,8 @@ fun ChatScreen(
     viewModel: ChatViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToHistory: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val messages = uiState.messages
@@ -168,6 +170,15 @@ fun ChatScreen(
                     }
                 },
                 actions = {
+                    // History button
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "Chat History",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    // New Chat button
                     IconButton(onClick = { viewModel.onAction(ChatAction.StartNewChat) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Chat,

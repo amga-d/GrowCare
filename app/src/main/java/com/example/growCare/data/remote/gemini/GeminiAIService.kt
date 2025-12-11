@@ -97,7 +97,46 @@ class GeminiAIService @Inject constructor(
             } ?: throw Exception("Failed to load image")
 
             val prompt = """
-                Analyze this image of $seedType seeds for quality assessment. Provide a detailed analysis in JSON format.
+                You are an expert agricultural seed analyst with 20+ years of experience. Analyze this image of $seedType seeds for comprehensive quality assessment.
+                
+                SEED-TYPE-SPECIFIC EVALUATION CRITERIA:
+                
+                For WHEAT/BARLEY: Good quality seeds are plump, uniform in size, golden/amber color, intact kernel surface, no shriveling.
+                For RICE: Look for translucent appearance, uniform white/cream color, no chalky white spots, elongated shape, no cracks.
+                For CORN/MAIZE: Kernels should be hard, yellow/orange color, smooth surface, no blue/green mold, uniform size.
+                For BEANS/LEGUMES: Smooth coat, uniform color, no insect holes, kidney/oval shape retained, not wrinkled.
+                For SUNFLOWER: Black/striped shells intact, plump appearance, no hollow seeds, uniform size, no oil leakage stains.
+                For TOMATO: Flattened disc shape, cream/tan color, fuzzy coat intact, no fungal spots.
+                For LETTUCE: Tiny elongated seeds, light tan/brown, no clumping, dry texture.
+                
+                MULTI-FACTOR QUALITY SCORING SYSTEM (Total = 100):
+                1. UNIFORMITY (30 points): Size consistency across batch, minimal mixed sizes, standard deviation in dimensions
+                2. DAMAGE ASSESSMENT (25 points): Physical damage, insect holes, cracks, mold spots, discoloration
+                3. COLOR CONSISTENCY (20 points): Uniform natural color for seed type, no bleaching/darkening, no contamination
+                4. SIZE ADEQUACY (15 points): Seeds meet size standards for variety, not undersized/oversized
+                5. PURITY (10 points): No foreign material, weed seeds, broken pieces, chaff
+                
+                DAMAGE TYPE IDENTIFICATION GUIDE:
+                - INSECT: Visible holes, tunnels, exit holes (usually round, 1-3mm)
+                - FUNGAL: Discolored patches (black/white/green), fuzzy growth, shriveled appearance
+                - MECHANICAL: Cracks, splits, broken pieces, crushed kernels
+                - MOLD: Fuzzy surface growth, musty appearance, greenish tint
+                - DISCOLORATION: Unnatural darkening/lightening, water damage stains
+                - SHRIVELED: Wrinkled surface, reduced volume, lightweight appearance
+                - NONE: If seeds appear healthy with no visible damage
+                
+                GERMINATION POTENTIAL INDICATORS:
+                - HIGH (80-100%): Plump, firm, uniform color, intact seed coat, proper moisture content
+                - MEDIUM (60-79%): Minor discoloration, slight size variation, some mechanical damage
+                - LOW (40-59%): Visible fungal spots, insect damage, severe shriveling, poor color
+                - VERY LOW (<40%): Extensive damage, mold coverage, hollow/lightweight, broken pieces
+                
+                QUALITY GRADE THRESHOLDS for $seedType:
+                - EXCELLENT (90-100): <5% damage, uniform size, optimal color, 95%+ germination potential
+                - VERY GOOD (80-89): 5-10% damage, mostly uniform, good color, 85-94% germination
+                - GOOD (70-79): 10-15% damage, acceptable uniformity, 75-84% germination
+                - FAIR (60-69): 15-25% damage, mixed sizes, 65-74% germination
+                - POOR (<60): >25% damage, high variation, <65% germination - NOT RECOMMENDED
                 
                 Return ONLY valid JSON (no markdown formatting) with this exact structure:
                 {
@@ -107,23 +146,21 @@ class GeminiAIService @Inject constructor(
                   "damagePercentage": 10,
                   "damageTypes": ["NONE" or "INSECT", "FUNGAL", "MECHANICAL", "MOLD", "DISCOLORATION", "SHRIVELED"],
                   "germinationPotential": 90,
-                  "recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
-                  "storageAdvice": "optimal storage conditions and duration",
+                  "recommendations": ["specific recommendation 1", "specific recommendation 2", "specific recommendation 3"],
+                  "storageAdvice": "optimal storage conditions and duration for this seed type",
                   "isRecommendedForUse": true
                 }
                 
-                Guidelines:
-                - qualityScore: 0-100 (overall quality assessment)
-                - sizeAssessment: uniformity and appropriateness of seed size
-                - colorConsistency: how uniform the seed color is
-                - damagePercentage: 0-100 (percentage of seeds showing damage)
-                - damageTypes: list all observed damage types (use "NONE" if no damage)
-                - germinationPotential: 0-100 (likelihood of successful germination)
-                - recommendations: practical advice for farmers
-                - storageAdvice: how to store these seeds properly
-                - isRecommendedForUse: true if quality score >= 60, false otherwise
+                ANALYSIS REQUIREMENTS:
+                1. Examine MULTIPLE seeds in the image, not just one
+                2. Calculate damagePercentage based on proportion of damaged seeds visible
+                3. Consider seed type norms when scoring (don't compare rice to corn standards)
+                4. Be realistic - most farmer seeds are 60-80 quality, not 90+
+                5. Provide actionable recommendations specific to observed issues
+                6. Factor in: uniformity (30%), damage (25%), color (20%), size (15%), purity (10%)
+                7. If quality score is below 60, set isRecommendedForUse to false
+                8. Germination potential should correlate with quality score and damage
                 
-                Be specific and practical for agricultural use.
                 Return ONLY the JSON object, no additional text.
             """.trimIndent()
 

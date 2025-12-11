@@ -20,7 +20,8 @@ class CalculateFertilizerUseCase @Inject constructor(
         soilType: String,
         area: Double,
         currentNPK: NPK,
-        targetYield: Double? = null
+        targetYield: Double? = null,
+        growthStage: String? = null
     ): Result<FertilizerRecommendation> = withContext(dispatcher) {
         try {
             repository.calculateFertilizer(
@@ -28,7 +29,8 @@ class CalculateFertilizerUseCase @Inject constructor(
                 soilType = soilType,
                 area = area,
                 currentNPK = currentNPK,
-                targetYield = targetYield
+                targetYield = targetYield,
+                growthStage = growthStage
             )
         } catch (e: Exception) {
             Result.failure(e)

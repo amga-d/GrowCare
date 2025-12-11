@@ -182,7 +182,8 @@ class FertilizerViewModel @Inject constructor(
                     soilType = soilTypeEnum.name,
                     area = areaValue,
                     currentNPK = state.currentNPK,
-                    targetYield = state.targetYield.toDouble()
+                    targetYield = state.targetYield.toDouble(),
+                    growthStage = state.growthStage
                 )
                     .onSuccess { recommendation ->
                         _uiState.update { it.copy(

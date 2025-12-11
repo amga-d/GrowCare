@@ -149,6 +149,60 @@ class FirestoreDataSource @Inject constructor(
     }
 
     /**
+     * Get all conversations for a user
+     */
+    suspend fun getAllConversations(userId: String): Result<List<Map<String, Any>>> = try {
+        val conversationsSnapshot = firestore.collection(COLLECTION_USERS)
+            .document(userId)
+            .collection(COLLECTION_CHAT_HISTORY)
+            .get()
+            .await()
+
+        val conversations = conversationsSnapshot.documents.mapNotNull { conversationDoc ->
+            val conversationId = conversationDoc.id
+            
+            // Get the last message from this conversation
+            val messagesSnapshot = firestore.collection(COLLECTION_USERS)
+                .document(userId)
+                .collection(COLLECTION_CHAT_HISTORY)
+                .document(conversationId)
+                .collection(COLLECTION_CHAT_MESSAGES)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .await()
+
+            val lastMessage = messagesSnapshot.documents.firstOrNull()
+            val lastMessageContent = lastMessage?.getString("content") ?: ""
+            val lastMessageTime = lastMessage?.getLong("timestamp") ?: 0L
+            
+            // Get total message count
+            val messageCount = firestore.collection(COLLECTION_USERS)
+                .document(userId)
+                .collection(COLLECTION_CHAT_HISTORY)
+                .document(conversationId)
+                .collection(COLLECTION_CHAT_MESSAGES)
+                .get()
+                .await()
+                .size()
+            
+            // Only include conversations that have messages
+            if (messageCount > 0) {
+                mapOf(
+                    "id" to conversationId,
+                    "lastMessage" to lastMessageContent,
+                    "lastMessageTime" to lastMessageTime,
+                    "messageCount" to messageCount
+                )
+            } else null
+        }
+        
+        Result.success(conversations)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
      * Delete entire conversation
      */
     suspend fun deleteConversation(userId: String, conversationId: String): Result<Unit> = try {

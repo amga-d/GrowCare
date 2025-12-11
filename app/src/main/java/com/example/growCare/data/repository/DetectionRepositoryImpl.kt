@@ -12,9 +12,13 @@ import com.example.growCare.domain.model.SeedSize
 import com.example.growCare.domain.model.DamageType
 import com.example.growCare.domain.repository.DetectionRepository
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -42,23 +46,37 @@ class DetectionRepositoryImpl @Inject constructor(
         return try {
             val userId = getCurrentUserId()
             
-            // Step 1: Upload image to Firebase Storage
-            val imageUploadResult = storageDataSource.uploadDiseaseImage(userId, imageUri)
-            if (imageUploadResult.isFailure) {
-                return Result.failure(imageUploadResult.exceptionOrNull() 
-                    ?: Exception("Failed to upload image"))
+            // OPTIMIZATION: Parallelize upload and analysis with timeout
+            val (imageUrl, analysisJson) = coroutineScope {
+                val uploadDeferred = async {
+                    withTimeout(15000L) { // 15 second timeout
+                        storageDataSource.uploadDiseaseImage(userId, imageUri)
+                    }
+                }
+                
+                val analysisDeferred = async {
+                    withTimeout(30000L) { // 30 second timeout for AI
+                        geminiAIService.analyzePlantDisease(imageUri)
+                    }
+                }
+                
+                // Await both concurrently
+                val uploadResult = uploadDeferred.await()
+                val analysisResult = analysisDeferred.await()
+                
+                if (uploadResult.isFailure) {
+                    throw uploadResult.exceptionOrNull() 
+                        ?: Exception("Failed to upload image")
+                }
+                if (analysisResult.isFailure) {
+                    throw analysisResult.exceptionOrNull() 
+                        ?: Exception("Failed to analyze image")
+                }
+                
+                Pair(uploadResult.getOrThrow(), analysisResult.getOrThrow())
             }
-            val imageUrl = imageUploadResult.getOrThrow()
             
-            // Step 2: Analyze with Gemini AI
-            val analysisResult = geminiAIService.analyzePlantDisease(imageUri)
-            if (analysisResult.isFailure) {
-                return Result.failure(analysisResult.exceptionOrNull() 
-                    ?: Exception("Failed to analyze image"))
-            }
-            val analysisJson = analysisResult.getOrThrow()
-            
-            // Step 3: Parse AI response into DiseaseAnalysis object
+            // Parse AI response into DiseaseAnalysis object
             val diseaseDto = geminiAIService.parseDiseaseAnalysisJson(analysisJson)
             val diseaseAnalysis = DiseaseAnalysis(
                 id = UUID.randomUUID().toString(),
@@ -75,16 +93,15 @@ class DetectionRepositoryImpl @Inject constructor(
                 timestamp = System.currentTimeMillis()
             )
             
-            // Step 4: Save to Firestore
-            val saveResult = firestoreDataSource.saveDiseaseAnalysis(
-                userId = userId,
-                scanId = diseaseAnalysis.id,
-                analysisData = diseaseAnalysisToMap(diseaseAnalysis)
-            )
-            
-            if (saveResult.isFailure) {
-                // Still return the analysis even if save fails
-                // Just log the error or handle it appropriately
+            // OPTIMIZATION: Save to Firestore in background (non-blocking)
+            coroutineScope {
+                launch {
+                    firestoreDataSource.saveDiseaseAnalysis(
+                        userId = userId,
+                        scanId = diseaseAnalysis.id,
+                        analysisData = diseaseAnalysisToMap(diseaseAnalysis)
+                    )
+                }
             }
             
             Result.success(diseaseAnalysis)
@@ -100,23 +117,37 @@ class DetectionRepositoryImpl @Inject constructor(
         return try {
             val userId = getCurrentUserId()
             
-            // Step 1: Upload image to Firebase Storage
-            val imageUploadResult = storageDataSource.uploadSeedImage(userId, imageUri)
-            if (imageUploadResult.isFailure) {
-                return Result.failure(imageUploadResult.exceptionOrNull() 
-                    ?: Exception("Failed to upload image"))
+            // OPTIMIZATION: Parallelize upload and analysis with timeout
+            val (imageUrl, analysisJson) = coroutineScope {
+                val uploadDeferred = async {
+                    withTimeout(15000L) { // 15 second timeout
+                        storageDataSource.uploadSeedImage(userId, imageUri)
+                    }
+                }
+                
+                val analysisDeferred = async {
+                    withTimeout(30000L) { // 30 second timeout for AI
+                        geminiAIService.analyzeSeedQuality(imageUri, seedType)
+                    }
+                }
+                
+                // Await both concurrently
+                val uploadResult = uploadDeferred.await()
+                val analysisResult = analysisDeferred.await()
+                
+                if (uploadResult.isFailure) {
+                    throw uploadResult.exceptionOrNull() 
+                        ?: Exception("Failed to upload image")
+                }
+                if (analysisResult.isFailure) {
+                    throw analysisResult.exceptionOrNull() 
+                        ?: Exception("Failed to analyze image")
+                }
+                
+                Pair(uploadResult.getOrThrow(), analysisResult.getOrThrow())
             }
-            val imageUrl = imageUploadResult.getOrThrow()
             
-            // Step 2: Analyze with Gemini AI
-            val analysisResult = geminiAIService.analyzeSeedQuality(imageUri, seedType)
-            if (analysisResult.isFailure) {
-                return Result.failure(analysisResult.exceptionOrNull() 
-                    ?: Exception("Failed to analyze image"))
-            }
-            val analysisJson = analysisResult.getOrThrow()
-            
-            // Step 3: Parse AI response into SeedQuality object
+            // Parse AI response into SeedQuality object
             val seedDto = geminiAIService.parseSeedQualityJson(analysisJson)
             val seedQuality = SeedQuality(
                 id = UUID.randomUUID().toString(),
@@ -135,15 +166,15 @@ class DetectionRepositoryImpl @Inject constructor(
                 timestamp = System.currentTimeMillis()
             )
             
-            // Step 4: Save to Firestore
-            val saveResult = firestoreDataSource.saveSeedAnalysis(
-                userId = userId,
-                scanId = seedQuality.id,
-                analysisData = seedQualityToMap(seedQuality)
-            )
-            
-            if (saveResult.isFailure) {
-                // Still return the analysis even if save fails
+            // OPTIMIZATION: Save to Firestore in background (non-blocking)
+            coroutineScope {
+                launch {
+                    firestoreDataSource.saveSeedAnalysis(
+                        userId = userId,
+                        scanId = seedQuality.id,
+                        analysisData = seedQualityToMap(seedQuality)
+                    )
+                }
             }
             
             Result.success(seedQuality)
