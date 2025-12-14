@@ -109,14 +109,26 @@ class FirestoreDataSource @Inject constructor(
         messageId: String,
         messageData: Map<String, Any>
     ): Result<Unit> = try {
-        firestore.collection(COLLECTION_USERS)
+        val batch = firestore.batch()
+        
+        val conversationRef = firestore.collection(COLLECTION_USERS)
             .document(userId)
             .collection(COLLECTION_CHAT_HISTORY)
             .document(conversationId)
-            .collection(COLLECTION_CHAT_MESSAGES)
-            .document(messageId)
-            .set(messageData)
-            .await()
+            
+        // 1. Save the message
+        val messageRef = conversationRef.collection(COLLECTION_CHAT_MESSAGES).document(messageId)
+        batch.set(messageRef, messageData)
+
+        // 2. Update conversation metadata
+        val conversationUpdate = mapOf(
+            "lastMessage" to (messageData["content"] ?: ""),
+            "lastMessageTime" to (messageData["timestamp"] ?: System.currentTimeMillis()),
+            "messageCount" to com.google.firebase.firestore.FieldValue.increment(1)
+        )
+        batch.set(conversationRef, conversationUpdate, com.google.firebase.firestore.SetOptions.merge())
+
+        batch.commit().await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
@@ -155,46 +167,18 @@ class FirestoreDataSource @Inject constructor(
         val conversationsSnapshot = firestore.collection(COLLECTION_USERS)
             .document(userId)
             .collection(COLLECTION_CHAT_HISTORY)
+            .orderBy("lastMessageTime", Query.Direction.DESCENDING)
             .get()
             .await()
 
-        val conversations = conversationsSnapshot.documents.mapNotNull { conversationDoc ->
-            val conversationId = conversationDoc.id
-            
-            // Get the last message from this conversation
-            val messagesSnapshot = firestore.collection(COLLECTION_USERS)
-                .document(userId)
-                .collection(COLLECTION_CHAT_HISTORY)
-                .document(conversationId)
-                .collection(COLLECTION_CHAT_MESSAGES)
-                .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(1)
-                .get()
-                .await()
-
-            val lastMessage = messagesSnapshot.documents.firstOrNull()
-            val lastMessageContent = lastMessage?.getString("content") ?: ""
-            val lastMessageTime = lastMessage?.getLong("timestamp") ?: 0L
-            
-            // Get total message count
-            val messageCount = firestore.collection(COLLECTION_USERS)
-                .document(userId)
-                .collection(COLLECTION_CHAT_HISTORY)
-                .document(conversationId)
-                .collection(COLLECTION_CHAT_MESSAGES)
-                .get()
-                .await()
-                .size()
-            
-            // Only include conversations that have messages
-            if (messageCount > 0) {
-                mapOf(
-                    "id" to conversationId,
-                    "lastMessage" to lastMessageContent,
-                    "lastMessageTime" to lastMessageTime,
-                    "messageCount" to messageCount
-                )
-            } else null
+        val conversations = conversationsSnapshot.documents.mapNotNull { doc ->
+            val data = doc.data ?: return@mapNotNull null
+            // Only include if it has messages (indicated by lastMessageTime)
+            if (data.containsKey("lastMessageTime")) {
+                 data.plus("id" to doc.id)
+            } else {
+                null
+            }
         }
         
         Result.success(conversations)

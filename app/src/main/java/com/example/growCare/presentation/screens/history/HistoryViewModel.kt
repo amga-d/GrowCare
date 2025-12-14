@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.growCare.domain.model.DiseaseAnalysis
 import com.example.growCare.domain.model.SeedQuality
-import com.example.growCare.domain.usecase.chat.GetChatHistoryUseCase
+import com.example.growCare.domain.usecase.chat.GetAllConversationsUseCase
 import com.example.growCare.domain.usecase.detection.GetDiseaseAnalysisByIdUseCase
 import com.example.growCare.domain.usecase.detection.GetDiseaseHistoryUseCase
 import com.example.growCare.domain.usecase.detection.GetSeedAnalysisByIdUseCase
@@ -20,7 +20,7 @@ class HistoryViewModel @Inject constructor(
     private val getDiseaseHistoryUseCase: GetDiseaseHistoryUseCase,
     private val getSeedHistoryUseCase: GetSeedHistoryUseCase,
     private val getFertilizerHistoryUseCase: GetFertilizerHistoryUseCase,
-    private val getChatHistoryUseCase: GetChatHistoryUseCase,
+    private val getAllConversationsUseCase: GetAllConversationsUseCase,
     private val getDiseaseAnalysisByIdUseCase: GetDiseaseAnalysisByIdUseCase,
     private val getSeedAnalysisByIdUseCase: GetSeedAnalysisByIdUseCase
 ) : ViewModel() {
@@ -38,8 +38,8 @@ class HistoryViewModel @Inject constructor(
                     getDiseaseHistoryUseCase(),
                     getSeedHistoryUseCase(),
                     getFertilizerHistoryUseCase(),
-                    getChatHistoryUseCase("all") // Get all chat sessions
-                ) { diseaseHistory, seedHistory, fertilizerHistory, chatHistory ->
+                    getAllConversationsUseCase()
+                ) { diseaseHistory, seedHistory, fertilizerHistory, conversations ->
                     
                     val allHistory = buildList {
                         // Add disease history
@@ -77,18 +77,15 @@ class HistoryViewModel @Inject constructor(
                             ))
                         }
 
-                        // Add chat history (group by conversation)
-                        chatHistory.groupBy { it.conversationId }.forEach { (conversationId, messages) ->
-                            val firstMessage = messages.firstOrNull()
-                            if (firstMessage != null) {
-                                add(HistoryItem(
-                                    id = conversationId ?: "chat_${System.currentTimeMillis()}",
-                                    type = HistoryType.CHAT,
-                                    title = firstMessage.content.take(30) + if (firstMessage.content.length > 30) "..." else "",
-                                    subtitle = "${messages.size} messages",
-                                    timestamp = firstMessage.timestamp
-                                ))
-                            }
+                        // Add chat history
+                        conversations.forEach { conversation ->
+                            add(HistoryItem(
+                                id = conversation.id,
+                                type = HistoryType.CHAT,
+                                title = conversation.title,
+                                subtitle = conversation.lastMessage,
+                                timestamp = conversation.lastMessageTime
+                            ))
                         }
                     }.sortedByDescending { it.timestamp }
 

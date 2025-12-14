@@ -7,7 +7,7 @@ object Screen {
     const val HOME = "home"
     const val LOGIN = "login"
     const val SIGNUP = "signup"
-    const val CHAT = "chat"
+    const val CHAT = "chat?conversationId={conversationId}"
     const val CHAT_HISTORY = "chat_history"
     const val FERTILIZER = "fertilizer"
     const val SEED_SCAN = "seed_scan"

@@ -1,6 +1,7 @@
 package com.example.growCare.presentation.screens.chat
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.growCare.domain.model.ChatMessage
@@ -22,11 +23,14 @@ class ChatViewModel @Inject constructor(
     private val sendChatMessageUseCase: SendChatMessageUseCase,
     private val sendMessageWithImageUseCase: SendMessageWithImageUseCase,
     private val getChatHistoryUseCase: GetChatHistoryUseCase,
-    private val getAllConversationsUseCase: GetAllConversationsUseCase
+    private val getAllConversationsUseCase: GetAllConversationsUseCase,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     // UI State
-    private val _uiState = MutableStateFlow(ChatUiState())
+    private val _uiState = MutableStateFlow(ChatUiState(
+        conversationId = "chat_${System.currentTimeMillis()}"
+    ))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     // Events for one-time actions
@@ -34,7 +38,12 @@ class ChatViewModel @Inject constructor(
     val events: SharedFlow<ChatEvent> = _events.asSharedFlow()
 
     init {
-        loadChatHistory()
+        val conversationId = savedStateHandle.get<String>("conversationId")
+        if (conversationId != null) {
+            loadConversation(conversationId)
+        } else {
+            loadChatHistory()
+        }
     }
 
     /**
@@ -57,7 +66,7 @@ class ChatViewModel @Inject constructor(
      */
     private fun loadChatHistory() {
         viewModelScope.launch {
-            getChatHistoryUseCase("default").collect { messages ->
+            getChatHistoryUseCase(_uiState.value.conversationId).collect { messages ->
                 _uiState.update { it.copy(
                     messages = messages,
                     isLoading = false
@@ -82,26 +91,20 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                var lastMessageId: String? = null
-                sendChatMessageUseCase(message, "default").collect { chatMessage ->
+                sendChatMessageUseCase(message, _uiState.value.conversationId).collect { chatMessage ->
                     // Update or add message in the list
                     _uiState.update { state ->
                         val existingMessages = state.messages.toMutableList()
                         
-                        // Track the last message ID to avoid duplicates
-                        if (lastMessageId == null || lastMessageId == chatMessage.id) {
-                            lastMessageId = chatMessage.id
-                            
-                            // Check if this message already exists (for streaming updates)
-                            val existingIndex = existingMessages.indexOfFirst { it.id == chatMessage.id }
-                            
-                            if (existingIndex >= 0) {
-                                // Update existing message
-                                existingMessages[existingIndex] = chatMessage
-                            } else {
-                                // Add new message
-                                existingMessages.add(chatMessage)
-                            }
+                        // Check if this message already exists (for streaming updates)
+                        val existingIndex = existingMessages.indexOfFirst { it.id == chatMessage.id }
+                        
+                        if (existingIndex >= 0) {
+                            // Update existing message
+                            existingMessages[existingIndex] = chatMessage
+                        } else {
+                            // Add new message
+                            existingMessages.add(chatMessage)
                         }
                         
                         state.copy(
@@ -142,21 +145,19 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                var lastMessageId: String? = null
-                sendMessageWithImageUseCase(message, imageUri, "default").collect { chatMessage ->
+                sendMessageWithImageUseCase(message, imageUri, _uiState.value.conversationId).collect { chatMessage ->
                     _uiState.update { state ->
                         val existingMessages = state.messages.toMutableList()
                         
-                        // Track message ID to avoid duplicates
-                        if (lastMessageId == null || lastMessageId == chatMessage.id) {
-                            lastMessageId = chatMessage.id
-                            
-                            val existingIndex = existingMessages.indexOfFirst { it.id == chatMessage.id }
-                            if (existingIndex >= 0) {
-                                existingMessages[existingIndex] = chatMessage
-                            } else {
-                                existingMessages.add(chatMessage)
-                            }
+                        // Check if this message already exists (for streaming updates)
+                        val existingIndex = existingMessages.indexOfFirst { it.id == chatMessage.id }
+                        
+                        if (existingIndex >= 0) {
+                            // Update existing message
+                            existingMessages[existingIndex] = chatMessage
+                        } else {
+                            // Add new message
+                            existingMessages.add(chatMessage)
                         }
                         
                         state.copy(

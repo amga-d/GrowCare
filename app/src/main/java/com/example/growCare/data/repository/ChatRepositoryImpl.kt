@@ -171,8 +171,8 @@ class ChatRepositoryImpl @Inject constructor(
                 val conversations = conversationsData.map { data ->
                     val conversationId = data["id"] as? String ?: ""
                     val lastMessage = data["lastMessage"] as? String ?: ""
-                    val lastMessageTime = data["lastMessageTime"] as? Long ?: 0L
-                    val messageCount = data["messageCount"] as? Int ?: 0
+                    val lastMessageTime = (data["lastMessageTime"] as? Number)?.toLong() ?: 0L
+                    val messageCount = (data["messageCount"] as? Number)?.toInt() ?: 0
                     
                     // Create title from conversation ID or first message
                     val title = if (conversationId.startsWith("chat_")) {

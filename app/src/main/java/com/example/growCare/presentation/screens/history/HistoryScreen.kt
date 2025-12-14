@@ -32,7 +32,8 @@ fun HistoryScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToDiseaseResult: (String) -> Unit = {},
     onNavigateToSeedResult: (String) -> Unit = {},
-    onNavigateToFertilizerResult: (String) -> Unit = {}
+    onNavigateToFertilizerResult: (String) -> Unit = {},
+    onNavigateToChat: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val primaryGreen = MaterialTheme.colorScheme.primary
@@ -162,7 +163,7 @@ fun HistoryScreen(
                                         HistoryType.DISEASE -> onNavigateToDiseaseResult(item.id)
                                         HistoryType.SEED -> onNavigateToSeedResult(item.id)
                                         HistoryType.FERTILIZER -> onNavigateToFertilizerResult(item.id)
-                                        HistoryType.CHAT -> { /* Navigate to chat */ }
+                                        HistoryType.CHAT -> onNavigateToChat(item.id)
                                     }
                                 }
                             )

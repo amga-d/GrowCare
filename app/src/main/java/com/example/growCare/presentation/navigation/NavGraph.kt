@@ -6,8 +6,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.growCare.data.local.preferences.ThemeMode
 import com.example.growCare.presentation.screens.auth.login.LoginScreen
 import com.example.growCare.presentation.screens.auth.signup.SignUpScreen
@@ -181,7 +183,16 @@ fun NavGraph(
         }
 
         // AI Chat assistant
-        composable(Screen.CHAT) {
+        composable(
+            route = Screen.CHAT,
+            arguments = listOf(
+                navArgument("conversationId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) {
             val chatViewModel: com.example.growCare.presentation.screens.chat.ChatViewModel = hiltViewModel()
             
             ChatScreen(
@@ -256,6 +267,9 @@ fun NavGraph(
                 onNavigateToFertilizerResult = { fertilizerId ->
                     // TODO: Load fertilizer from ID and navigate
                     navController.navigate(Screen.FERTILIZER)
+                },
+                onNavigateToChat = { conversationId ->
+                    navController.navigate("chat?conversationId=$conversationId")
                 }
             )
         }
@@ -271,14 +285,8 @@ fun NavGraph(
                     navController.popBackStack()
                 },
                 onConversationClick = { conversationId ->
-                    // Load conversation in ViewModel
-                    scope.launch {
-                        chatViewModel.onAction(
-                            com.example.growCare.presentation.screens.chat.ChatAction.LoadConversation(conversationId)
-                        )
-                    }
-                    // Navigate to chat
-                    navController.popBackStack()
+                    // Navigate to chat with conversation ID
+                    navController.navigate("chat?conversationId=$conversationId")
                 }
             )
         }
