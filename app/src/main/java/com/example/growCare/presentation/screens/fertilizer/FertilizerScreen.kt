@@ -99,15 +99,6 @@ fun FertilizerScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { /* TODO: Handle Share */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
-                            tint = primaryColor
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),

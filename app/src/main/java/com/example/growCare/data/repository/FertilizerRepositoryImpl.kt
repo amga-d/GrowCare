@@ -242,7 +242,13 @@ class FertilizerRepositoryImpl @Inject constructor(
     ): FertilizerRecommendation {
         // Try JSON-first parsing for reliability
         try {
-            val root = JSONObject(analysisText)
+            // Clean up markdown code blocks if present
+            val jsonString = analysisText.trim()
+                .replace("```json", "")
+                .replace("```", "")
+                .trim()
+                
+            val root = JSONObject(jsonString)
 
             val recommendedJson = root.optJSONObject("recommendedNPK") ?: JSONObject()
             val recommendedN = recommendedJson.optDouble("nitrogen", 100.0)

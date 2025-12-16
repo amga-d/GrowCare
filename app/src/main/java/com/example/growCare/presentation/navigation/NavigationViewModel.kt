@@ -2,6 +2,7 @@ package com.example.growCare.presentation.navigation
 
 import androidx.lifecycle.ViewModel
 import com.example.growCare.domain.model.DiseaseAnalysis
+import com.example.growCare.domain.model.FertilizerRecommendation
 import com.example.growCare.domain.model.SeedQuality
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,10 @@ class NavigationViewModel @Inject constructor() : ViewModel() {
     private val _currentSeedImageUrl = MutableStateFlow<String?>(null)
     val currentSeedImageUrl: StateFlow<String?> = _currentSeedImageUrl.asStateFlow()
 
+    // Fertilizer Recommendation State
+    private val _currentFertilizerRecommendation = MutableStateFlow<FertilizerRecommendation?>(null)
+    val currentFertilizerRecommendation: StateFlow<FertilizerRecommendation?> = _currentFertilizerRecommendation.asStateFlow()
+
     /**
      * Set disease analysis data for navigation
      */
@@ -47,6 +52,13 @@ class NavigationViewModel @Inject constructor() : ViewModel() {
     }
 
     /**
+     * Set fertilizer recommendation for navigation
+     */
+    fun setFertilizerRecommendation(recommendation: FertilizerRecommendation) {
+        _currentFertilizerRecommendation.value = recommendation
+    }
+
+    /**
      * Clear disease analysis data
      */
     fun clearDiseaseAnalysis() {
@@ -60,5 +72,12 @@ class NavigationViewModel @Inject constructor() : ViewModel() {
     fun clearSeedAnalysis() {
         _currentSeedAnalysis.value = null
         _currentSeedImageUrl.value = null
+    }
+
+    /**
+     * Clear fertilizer recommendation data
+     */
+    fun clearFertilizerRecommendation() {
+        _currentFertilizerRecommendation.value = null
     }
 }

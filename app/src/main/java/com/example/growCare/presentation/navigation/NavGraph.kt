@@ -17,6 +17,7 @@ import com.example.growCare.presentation.screens.chat.ChatScreen
 import com.example.growCare.presentation.screens.detection.DiseaseScanScreen
 import com.example.growCare.presentation.screens.detection.DiseaseResultScreen
 import com.example.growCare.presentation.screens.fertilizer.FertilizerScreen
+import com.example.growCare.presentation.screens.fertilizer.FertilizerResultScreen
 import com.example.growCare.presentation.screens.home.HomeScreen
 import com.example.growCare.presentation.screens.profile.ProfileScreen
 import com.example.growCare.presentation.screens.seed.SeedScanScreen
@@ -98,8 +99,27 @@ fun NavGraph(
             FertilizerScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToResult = { recommendation ->
+                    navigationViewModel.setFertilizerRecommendation(recommendation)
+                    navController.navigate(Screen.FERTILIZER_RESULT)
                 }
             )
+        }
+
+        // Fertilizer result
+        composable(Screen.FERTILIZER_RESULT) {
+            val recommendation by navigationViewModel.currentFertilizerRecommendation.collectAsStateWithLifecycle()
+            
+            recommendation?.let { rec ->
+                FertilizerResultScreen(
+                    recommendation = rec,
+                    onNavigateBack = {
+                        navigationViewModel.clearFertilizerRecommendation()
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
         // Seed quality scanner
