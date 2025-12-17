@@ -251,75 +251,136 @@ class GeminiClient @Inject constructor(
     /**
      * Get fertilizer recommendation based on crop and soil
      */
-        suspend fun getFertilizerRecommendation(
-                cropType: String,
-                soilType: String,
-                area: Double,
-                currentNPK: String,
-                targetYield: Double? = null,
-                growthStage: String? = null
-        ): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun getFertilizerRecommendation(
+        cropType: String,
+        soilType: String,
+        area: Double,
+        currentNPK: String,
+        targetYield: Double? = null,
+        growthStage: String? = null
+    ): Result<String> = withContext(Dispatchers.IO) {
         try {
-                        val targetYieldText = targetYield?.let { "\"targetYield\": $it," } ?: ""
-                        val growthStageText = growthStage?.takeIf { it.isNotBlank() }?.let { "\"growthStage\": \"$it\"," } ?: ""
+            val targetYieldText = targetYield?.let { "\"targetYield\": $it," } ?: ""
+            val growthStageText = growthStage?.takeIf { it.isNotBlank() }?.let { "\"growthStage\": \"$it\"," } ?: ""
 
-                        val prompt = """
-                                You are an agronomy expert. Respond with **ONLY valid JSON**, no markdown, no prose. If unsure, still return JSON with best estimates.
+            val prompt = """
+                You are an agronomy expert. Respond with **ONLY valid JSON**, no markdown, no prose. If unsure, still return JSON with best estimates.
 
-                                Inputs:
-                                {
-                                    "cropType": "$cropType",
-                                    "soilType": "$soilType",
-                                    "areaAcres": $area,
-                                    "currentNPK": "$currentNPK",
-                                    $targetYieldText
-                                    $growthStageText
-                                    "assumptions": {
-                                        "region": "Assume local context based on crop and soil; prefer South Asia/Africa defaults if not specified",
-                                        "irrigation": "Assume normal irrigation unless crop/soil indicates otherwise",
-                                        "units": "All weights in kg, area in acres"
-                                    }
-                                }
+                Inputs:
+                {
+                    "cropType": "$cropType",
+                    "soilType": "$soilType",
+                    "areaAcres": $area,
+                    "currentNPK": "$currentNPK",
+                    $targetYieldText
+                    $growthStageText
+                    "assumptions": {
+                        "region": "Assume local context based on crop and soil; prefer South Asia/Africa defaults if not specified",
+                        "irrigation": "Assume normal irrigation unless crop/soil indicates otherwise",
+                        "units": "All weights in kg, area in acres"
+                    }
+                }
 
-                                Output strict JSON with these keys:
-                                {
-                                    "recommendedNPK": {"nitrogen": number, "phosphorus": number, "potassium": number},
-                                    "npkGap": {"nitrogen": number, "phosphorus": number, "potassium": number},
-                                    "products": [
-                                        {
-                                            "name": string,
-                                            "npkRatio": {"nitrogen": number, "phosphorus": number, "potassium": number},
-                                            "quantityKgPerAcre": number,
-                                            "applicationMethod": string,
-                                            "pricePerKg": number,
-                                            "isOrganic": boolean
-                                        }
-                                    ],
-                                    "applicationSchedule": [
-                                        {
-                                            "phase": string,
-                                            "daysAfterPlanting": number,
-                                            "npkRatio": {"nitrogen": number, "phosphorus": number, "potassium": number},
-                                            "quantityKgPerAcre": number,
-                                            "instructions": string
-                                        }
-                                    ],
-                                    "estimatedCostPerAcre": number,
-                                    "organicAlternatives": [string],
-                                    "additionalNotes": string
-                                }
+                Output strict JSON with these keys:
+                {
+                    "recommendedNPK": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                    "npkGap": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                    "products": [
+                        {
+                            "name": string,
+                            "npkRatio": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                            "quantityKgPerAcre": number,
+                            "applicationMethod": string,
+                            "pricePerKg": number,
+                            "isOrganic": boolean
+                        }
+                    ],
+                    "applicationSchedule": [
+                        {
+                            "phase": string,
+                            "daysAfterPlanting": number,
+                            "npkRatio": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                            "quantityKgPerAcre": number,
+                            "instructions": string
+                        }
+                    ],
+                    "estimatedCostPerAcre": number,
+                    "organicAlternatives": [string],
+                    "additionalNotes": string
+                }
 
-                                Requirements:
-                                - Keep numbers realistic for farmers: total N usually 60-200 kg/acre depending on crop.
-                                - Compute npkGap = recommendedNPK - currentNPK per nutrient.
-                                - Cost must be per-acre; avoid huge totals; assume moderate pricing if unknown.
-                                - Application schedule must have at least 2 phases (basal + topdress/side-dress) aligned to growthStage if provided.
-                                - Prefer crop-specific defaults: rice/wheat/maize/soybean/cotton/potato/tomato/vegetables, but support any crop gracefully.
-                                - If data missing, use conservative defaults and state them in additionalNotes.
-                                - No markdown. Return only JSON.
-                        """.trimIndent()
+                Requirements:
+                - Keep numbers realistic for farmers: total N usually 60-200 kg/acre depending on crop.
+                - Compute npkGap = recommendedNPK - currentNPK per nutrient.
+                - Cost must be per-acre; avoid huge totals; assume moderate pricing if unknown.
+                - Application schedule must have at least 2 phases (basal + topdress/side-dress) aligned to growthStage if provided.
+                - Prefer crop-specific defaults: rice/wheat/maize/soybean/cotton/potato/tomato/vegetables, but support any crop gracefully.
+                - If data missing, use conservative defaults and state them in additionalNotes.
+                - No markdown. Return only JSON.
+            """.trimIndent()
 
-                        val response = generativeModel.generateContent(prompt)
+            val response = generativeModel.generateContent(prompt)
+            val text = response.text ?: "No recommendation available"
+            Result.success(text)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get fertilizer recommendation based on free text query
+     */
+    suspend fun getFertilizerRecommendationFromText(
+        query: String
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val prompt = """
+                You are an agronomy expert. The user is asking for fertilizer advice: "$query"
+                
+                Analyze the request. If specific details (crop, soil, area) are missing, make reasonable assumptions based on the context of the question or use standard defaults (e.g., 1 acre, loamy soil).
+                
+                Respond with **ONLY valid JSON**, no markdown, no prose.
+                
+                Output strict JSON with these keys:
+                {
+                    "cropType": string (inferred or default),
+                    "soilType": string (inferred or default),
+                    "area": number (inferred or default 1.0),
+                    "currentNPK": {"nitrogen": number, "phosphorus": number, "potassium": number} (inferred or default 0-0-0),
+                    "recommendedNPK": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                    "npkGap": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                    "products": [
+                        {
+                            "name": string,
+                            "npkRatio": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                            "quantityKgPerAcre": number,
+                            "applicationMethod": string,
+                            "pricePerKg": number,
+                            "isOrganic": boolean
+                        }
+                    ],
+                    "applicationSchedule": [
+                        {
+                            "phase": string,
+                            "daysAfterPlanting": number,
+                            "npkRatio": {"nitrogen": number, "phosphorus": number, "potassium": number},
+                            "quantityKgPerAcre": number,
+                            "instructions": string
+                        }
+                    ],
+                    "estimatedCostPerAcre": number,
+                    "organicAlternatives": [string],
+                    "additionalNotes": string
+                }
+
+                Requirements:
+                - Keep numbers realistic for farmers.
+                - Cost must be per-acre.
+                - Application schedule must have at least 2 phases.
+                - No markdown. Return only JSON.
+            """.trimIndent()
+
+            val response = generativeModel.generateContent(prompt)
             val text = response.text ?: "No recommendation available"
             Result.success(text)
         } catch (e: Exception) {

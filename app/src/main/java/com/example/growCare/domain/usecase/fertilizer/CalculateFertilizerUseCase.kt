@@ -36,4 +36,14 @@ class CalculateFertilizerUseCase @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend operator fun invoke(
+        query: String
+    ): Result<FertilizerRecommendation> = withContext(dispatcher) {
+        try {
+            repository.calculateFertilizerFromText(query)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

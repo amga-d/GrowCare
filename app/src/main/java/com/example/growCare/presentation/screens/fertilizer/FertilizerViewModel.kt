@@ -41,7 +41,9 @@ class FertilizerViewModel @Inject constructor(
             is FertilizerAction.UpdateAreaSize -> updateAreaSize(action.area)
             is FertilizerAction.UpdateTargetYield -> updateTargetYield(action.yield)
             is FertilizerAction.UpdateCurrentNPK -> updateCurrentNPK(action.npk)
+            is FertilizerAction.UpdateManualQuery -> updateManualQuery(action.query)
             FertilizerAction.Calculate -> calculateFertilizer()
+            FertilizerAction.CalculateFromText -> calculateFertilizerFromText()
             FertilizerAction.Reset -> resetForm()
             FertilizerAction.LoadHistory -> loadHistory()
         }
@@ -210,6 +212,49 @@ class FertilizerViewModel @Inject constructor(
         }
     }
 
+    private fun updateManualQuery(query: String) {
+        _uiState.update { it.copy(
+            manualQuery = query,
+            manualQueryError = if (query.isBlank()) "Please enter your question" else null
+        )}
+    }
+
+    private fun calculateFertilizerFromText() {
+        val state = _uiState.value
+        if (state.manualQuery.isBlank()) {
+            _uiState.update { it.copy(manualQueryError = "Please enter your question") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCalculating = true, error = null) }
+            
+            try {
+                calculateFertilizerUseCase(state.manualQuery)
+                    .onSuccess { recommendation ->
+                        _uiState.update { it.copy(
+                            isCalculating = false,
+                            result = recommendation
+                        )}
+                        _events.emit(FertilizerEvent.NavigateToResult(recommendation))
+                    }
+                    .onFailure { error ->
+                        _uiState.update { it.copy(
+                            isCalculating = false,
+                            error = error.message ?: "Calculation failed"
+                        )}
+                        _events.emit(FertilizerEvent.ShowError(error.message ?: "Calculation failed"))
+                    }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(
+                    isCalculating = false,
+                    error = e.message ?: "An error occurred"
+                )}
+                _events.emit(FertilizerEvent.ShowError(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
     /**
      * Reset form to initial state
      */
@@ -240,6 +285,7 @@ data class FertilizerUiState(
     val areaSize: String = "",
     val targetYield: Float = 180f,
     val currentNPK: NPK = NPK(0.0, 0.0, 0.0),
+    val manualQuery: String = "",
     
     // Validation errors
     val cropTypeError: String? = null,
@@ -247,6 +293,7 @@ data class FertilizerUiState(
     val areaSizeError: String? = null,
     val targetYieldError: String? = null,
     val currentNPKError: String? = null,
+    val manualQueryError: String? = null,
     
     // State
     val isCalculating: Boolean = false,
@@ -265,7 +312,9 @@ sealed interface FertilizerAction {
     data class UpdateAreaSize(val area: String) : FertilizerAction
     data class UpdateTargetYield(val yield: Float) : FertilizerAction
     data class UpdateCurrentNPK(val npk: NPK) : FertilizerAction
+    data class UpdateManualQuery(val query: String) : FertilizerAction
     data object Calculate : FertilizerAction
+    data object CalculateFromText : FertilizerAction
     data object Reset : FertilizerAction
     data object LoadHistory : FertilizerAction
 }

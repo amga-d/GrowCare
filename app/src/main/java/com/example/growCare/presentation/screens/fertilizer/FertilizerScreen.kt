@@ -191,6 +191,7 @@ fun FertilizerScreen(
                     .padding(16.dp)
                     .fillMaxWidth()
             ) {
+                if (selectedTabIndex == 0) {
                 // A. Crop Type Dropdown
                 Column {
                     Text(
@@ -461,6 +462,73 @@ fun FertilizerScreen(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                }
+                } else {
+                    // Manual Input Content
+                    Text(
+                        text = "Ask AI for Fertilizer Advice",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textBlack,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = uiState.manualQuery,
+                        onValueChange = { viewModel.onAction(FertilizerAction.UpdateManualQuery(it)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        placeholder = { 
+                            Text("e.g., How to get maximum harvest for corn in dry season?") 
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        isError = uiState.manualQueryError != null
+                    )
+                    
+                    if (uiState.manualQueryError != null) {
+                        Text(
+                            text = uiState.manualQueryError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Button(
+                        onClick = { viewModel.onAction(FertilizerAction.CalculateFromText) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = primaryColor,
+                            contentColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        enabled = !uiState.isCalculating
+                    ) {
+                        if (uiState.isCalculating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.surface
+                            )
+                        } else {
+                            Text(
+                                text = "Ask AI",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

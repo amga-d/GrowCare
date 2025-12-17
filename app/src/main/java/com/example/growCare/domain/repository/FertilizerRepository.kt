@@ -27,6 +27,15 @@ interface FertilizerRepository {
         targetYield: Double? = null,
         growthStage: String? = null
     ): Result<FertilizerRecommendation>
+
+    /**
+     * Calculate fertilizer recommendation from free text query
+     * @param query User's question
+     * @return Result with FertilizerRecommendation
+     */
+    suspend fun calculateFertilizerFromText(
+        query: String
+    ): Result<FertilizerRecommendation>
     
     /**
      * Get fertilizer calculation history

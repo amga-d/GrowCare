@@ -79,6 +79,66 @@ class FertilizerRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun calculateFertilizerFromText(
+        query: String
+    ): Result<FertilizerRecommendation> {
+        return try {
+            val userId = getCurrentUserId()
+            
+            // Step 1: Get recommendation from Gemini AI
+            val recommendationResult = geminiClient.getFertilizerRecommendationFromText(query)
+            
+            if (recommendationResult.isFailure) {
+                return Result.failure(recommendationResult.exceptionOrNull() 
+                    ?: Exception("Failed to calculate fertilizer"))
+            }
+            
+            val analysisText = recommendationResult.getOrThrow()
+            
+            // Step 2: Extract metadata from JSON
+            val jsonString = analysisText.trim()
+                .replace("```json", "")
+                .replace("```", "")
+                .trim()
+            val root = JSONObject(jsonString)
+            
+            val cropType = root.optString("cropType", "Unknown Crop")
+            val soilType = root.optString("soilType", "Unknown Soil")
+            val area = root.optDouble("area", 1.0)
+            val currentNPKJson = root.optJSONObject("currentNPK")
+            val currentNPK = if (currentNPKJson != null) {
+                NPK(
+                    nitrogen = currentNPKJson.optDouble("nitrogen", 0.0),
+                    phosphorus = currentNPKJson.optDouble("phosphorus", 0.0),
+                    potassium = currentNPKJson.optDouble("potassium", 0.0)
+                )
+            } else {
+                NPK(0.0, 0.0, 0.0)
+            }
+            
+            // Step 3: Parse AI response into FertilizerRecommendation
+            val recommendation = parseFertilizerRecommendation(
+                analysisText = analysisText,
+                userId = userId,
+                cropType = cropType,
+                soilType = soilType,
+                area = area,
+                currentNPK = currentNPK,
+                targetYield = null
+            )
+            
+            // Step 4: Save to Firestore
+            val saveResult = saveFertilizerRecommendation(recommendation)
+            if (saveResult.isFailure) {
+                // Still return the recommendation even if save fails
+            }
+            
+            Result.success(recommendation)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override fun getFertilizerHistory(): Flow<List<FertilizerRecommendation>> = flow {
         try {
             val userId = getCurrentUserId()
