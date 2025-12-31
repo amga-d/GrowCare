@@ -101,12 +101,13 @@ class ChatRepositoryImpl @Inject constructor(
         try {
             val userId = getCurrentUserId()
             
-            // Step 1: Create and emit user message
+            // Step 1: Create and emit user message with image URL
             val userMessage = ChatMessage(
                 id = UUID.randomUUID().toString(),
-                content = "$message [Image attached]",
+                content = message,
                 isUser = true,
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis(),
+                imageUrl = imageUri.toString()
             )
             
             saveMessage(conversationId, userMessage)
@@ -250,12 +251,14 @@ class ChatRepositoryImpl @Inject constructor(
      * Convert ChatMessage to Map for Firestore
      */
     private fun chatMessageToMap(message: ChatMessage): Map<String, Any> {
-        return mapOf(
+        val map = mutableMapOf(
             "id" to message.id,
             "content" to message.content,
             "isUser" to message.isUser,
             "timestamp" to message.timestamp
         )
+        message.imageUrl?.let { map["imageUrl"] = it }
+        return map
     }
 
     /**
@@ -267,7 +270,8 @@ class ChatRepositoryImpl @Inject constructor(
             content = data["content"] as? String ?: "",
             isUser = data["isUser"] as? Boolean ?: false,
             timestamp = (data["timestamp"] as? Long) ?: System.currentTimeMillis(),
-            isStreaming = false // Never streaming when loading from Firestore
+            isStreaming = false, // Never streaming when loading from Firestore
+            imageUrl = data["imageUrl"] as? String
         )
     }
 }

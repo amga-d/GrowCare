@@ -9,5 +9,6 @@ data class ChatMessage(
     val isUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
     val isStreaming: Boolean = false,
-    val conversationId: String? = null
+    val conversationId: String? = null,
+    val imageUrl: String? = null
 )

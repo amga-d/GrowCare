@@ -39,39 +39,21 @@ fun DiseaseResultScreen(
 ) {
     val scrollState = rememberScrollState()
     
-    // Descriptive severity colors
+    // Use Material3 theme colors for semantic meaning
     val severityColor = when (analysis.severity) {
-        com.example.growCare.domain.model.DiseaseSeverity.SEVERE -> com.example.growCare.ui.theme.SeveritySevere
-        com.example.growCare.domain.model.DiseaseSeverity.MODERATE -> com.example.growCare.ui.theme.SeverityModerate
-        com.example.growCare.domain.model.DiseaseSeverity.MILD -> com.example.growCare.ui.theme.SeverityMild
+        com.example.growCare.domain.model.DiseaseSeverity.SEVERE -> MaterialTheme.colorScheme.error
+        com.example.growCare.domain.model.DiseaseSeverity.MODERATE -> MaterialTheme.colorScheme.tertiary
+        com.example.growCare.domain.model.DiseaseSeverity.MILD -> MaterialTheme.colorScheme.primary
     }
-    
-    val isDarkTheme = isSystemInDarkTheme()
     
     val severityBgColor = when (analysis.severity) {
         com.example.growCare.domain.model.DiseaseSeverity.SEVERE -> 
-            if (isDarkTheme) com.example.growCare.ui.theme.SeveritySevereBgDark 
-            else com.example.growCare.ui.theme.SeveritySevereBg
+            MaterialTheme.colorScheme.errorContainer
         com.example.growCare.domain.model.DiseaseSeverity.MODERATE -> 
-            if (isDarkTheme) com.example.growCare.ui.theme.SeverityModerateBgDark 
-            else com.example.growCare.ui.theme.SeverityModerateBg
+            MaterialTheme.colorScheme.tertiaryContainer
         com.example.growCare.domain.model.DiseaseSeverity.MILD -> 
-            if (isDarkTheme) com.example.growCare.ui.theme.SeverityMildBgDark 
-            else com.example.growCare.ui.theme.SeverityMildBg
+            MaterialTheme.colorScheme.primaryContainer
     }
-    
-    // Section card colors for dark mode support
-    val symptomsCardColor = if (isDarkTheme) 
-        com.example.growCare.ui.theme.SymptomsCardBgDark 
-    else com.example.growCare.ui.theme.SymptomsCardBg
-    
-    val treatmentCardColor = if (isDarkTheme) 
-        com.example.growCare.ui.theme.TreatmentCardBgDark 
-    else com.example.growCare.ui.theme.TreatmentCardBg
-    
-    val preventionCardColor = if (isDarkTheme) 
-        com.example.growCare.ui.theme.PreventionCardBgDark 
-    else com.example.growCare.ui.theme.PreventionCardBg
     
     val severityIcon = when (analysis.severity) {
         com.example.growCare.domain.model.DiseaseSeverity.SEVERE -> Icons.Default.Warning
@@ -118,32 +100,43 @@ fun DiseaseResultScreen(
                 }
             }
 
-            // Disease Header Card with severity-based styling
+            // Disease Header Card - minimalist design
             Card(
                 modifier = Modifier.fillMaxWidth(), 
-                colors = CardDefaults.cardColors(containerColor = severityBgColor), 
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ), 
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(severityColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        analysis.diseaseName, 
+                        style = MaterialTheme.typography.titleLarge, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    // Severity indicator with color-coded badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Severity:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Surface(
+                            color = severityColor.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
-                            Icon(severityIcon, null, tint = severityColor, modifier = Modifier.size(28.dp))
-                        }
-                        Column {
                             Text(
-                                analysis.diseaseName, 
-                                style = MaterialTheme.typography.titleLarge, 
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                "Severity: ${analysis.severity.toDisplayString()}",
-                                style = MaterialTheme.typography.bodyMedium,
+                                analysis.severity.toDisplayString(),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = severityColor
                             )
@@ -174,38 +167,35 @@ fun DiseaseResultScreen(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
-                            color = severityColor,
+                            color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
                     }
                 }
             }
 
-            // Use section card colors defined at top of composable
-            val sectionTextColor = if (isDarkTheme) Color.White else TextBlack
-
-            // Symptoms Section - Warm color to indicate warning
+            // Symptoms Section
             ResultSection(
-                title = "⚠️ Symptoms", 
+                title = "Symptoms", 
                 items = analysis.symptoms, 
-                backgroundColor = symptomsCardColor,
-                textColor = sectionTextColor
+                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            // Treatment Section - Green to indicate healing/action
+            // Treatment Section
             ResultSection(
-                title = "💊 Treatment", 
+                title = "Treatment", 
                 items = analysis.treatment, 
-                backgroundColor = treatmentCardColor,
-                textColor = sectionTextColor
+                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            // Prevention Section - Blue for informational
+            // Prevention Section
             ResultSection(
-                title = "🛡️ Prevention", 
+                title = "Prevention", 
                 items = analysis.prevention, 
-                backgroundColor = preventionCardColor,
-                textColor = sectionTextColor
+                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             if (!analysis.additionalNotes.isNullOrEmpty()) {
@@ -216,10 +206,10 @@ fun DiseaseResultScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "📝 Additional Notes", 
+                            "Additional Notes", 
                             style = MaterialTheme.typography.titleMedium, 
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             analysis.additionalNotes ?: "", 
@@ -291,7 +281,12 @@ private fun ResultSection(
         shape = RoundedCornerShape(12.dp), 
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp), 
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(
                 title, 
                 style = MaterialTheme.typography.titleMedium, 
@@ -299,9 +294,22 @@ private fun ResultSection(
                 color = textColor
             )
             items.forEach { item ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("•", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = textColor)
-                    Text(item, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), color = textColor.copy(alpha = 0.85f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(), 
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "•", 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        fontWeight = FontWeight.Bold, 
+                        color = textColor
+                    )
+                    Text(
+                        item, 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        modifier = Modifier.weight(1f), 
+                        color = textColor
+                    )
                 }
             }
         }

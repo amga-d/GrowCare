@@ -18,6 +18,7 @@ import com.example.growCare.data.local.database.entity.*
  * 
  * Version History:
  * - Version 1: Initial database schema with all core entities
+ * - Version 2: Added imageUrl field to ChatMessageEntity
  */
 @Database(
     entities = [
@@ -27,7 +28,7 @@ import com.example.growCare.data.local.database.entity.*
         SeedQualityEntity::class,
         UserEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(StringListConverter::class)

@@ -104,6 +104,7 @@ Room Database (SQLite)
 ### 1. Entities (Database Tables)
 
 #### ChatMessageEntity
+
 **Table**: `chat_messages`  
 **Purpose**: Store chat history for offline access
 
@@ -119,6 +120,7 @@ data class ChatMessageEntity(
 ```
 
 #### CropDataEntity
+
 **Table**: `crops`  
 **Purpose**: Store crop management data
 
@@ -146,6 +148,7 @@ data class CropDataEntity(
 ```
 
 #### DiseaseAnalysisEntity
+
 **Table**: `disease_analyses`  
 **Purpose**: Store plant disease detection history
 
@@ -169,6 +172,7 @@ data class DiseaseAnalysisEntity(
 ```
 
 #### SeedQualityEntity
+
 **Table**: `seed_analyses`  
 **Purpose**: Store seed quality analysis history
 
@@ -194,6 +198,7 @@ data class SeedQualityEntity(
 ```
 
 #### UserEntity
+
 **Table**: `users`  
 **Purpose**: Store user profile data locally
 
@@ -222,6 +227,7 @@ data class UserEntity(
 Each DAO provides comprehensive CRUD operations and specialized queries:
 
 #### ChatDao
+
 - `getConversationMessages()` - Get all messages in a conversation
 - `getAllConversations()` - Get latest message from each conversation
 - `insertMessage()` / `insertMessages()` - Save messages
@@ -229,6 +235,7 @@ Each DAO provides comprehensive CRUD operations and specialized queries:
 - `getMessageCount()` - Count messages
 
 #### CropDao
+
 - `getUserCrops()` - Get all user's crops
 - `getActiveCrops()` - Get non-harvested crops
 - `getCropsByHealthStatus()` - Filter by health
@@ -237,6 +244,7 @@ Each DAO provides comprehensive CRUD operations and specialized queries:
 - Full CRUD operations
 
 #### DiseaseAnalysisDao
+
 - `getUserAnalyses()` - All analyses for user
 - `getAnalysesByDisease()` - Filter by disease name
 - `getAnalysesBySeverity()` - Filter by severity
@@ -245,6 +253,7 @@ Each DAO provides comprehensive CRUD operations and specialized queries:
 - Full CRUD operations
 
 #### SeedAnalysisDao
+
 - `getUserAnalyses()` - All analyses for user
 - `getAnalysesBySeedType()` - Filter by seed type
 - `getRecommendedAnalyses()` - Only recommended seeds
@@ -253,6 +262,7 @@ Each DAO provides comprehensive CRUD operations and specialized queries:
 - Full CRUD operations
 
 #### UserDao
+
 - `getUserById()` - Reactive Flow
 - `getUserByIdOnce()` - One-time query
 - `getUserByEmail()` - Search by email
@@ -282,7 +292,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun diseaseAnalysisDao(): DiseaseAnalysisDao
     abstract fun seedAnalysisDao(): SeedAnalysisDao
     abstract fun userDao(): UserDao
-    
+
     companion object {
         const val DATABASE_NAME = "growcare_database"
     }
@@ -290,6 +300,7 @@ abstract class AppDatabase : RoomDatabase() {
 ```
 
 **Key Features**:
+
 - Version 1 (initial schema)
 - Export schema enabled (for migrations)
 - Type converters for List<String>
@@ -300,17 +311,18 @@ abstract class AppDatabase : RoomDatabase() {
 ### 4. Type Converters
 
 #### StringListConverter
+
 Converts `List<String>` to JSON for storage:
 
 ```kotlin
 class StringListConverter {
     private val gson = Gson()
-    
+
     @TypeConverter
     fun fromStringList(value: List<String>): String {
         return gson.toJson(value)
     }
-    
+
     @TypeConverter
     fun toStringList(value: String): List<String> {
         val listType = object : TypeToken<List<String>>() {}.type
@@ -320,6 +332,7 @@ class StringListConverter {
 ```
 
 **Used For**:
+
 - `symptoms` in DiseaseAnalysisEntity
 - `treatment` in DiseaseAnalysisEntity
 - `prevention` in DiseaseAnalysisEntity
@@ -331,7 +344,8 @@ class StringListConverter {
 
 ### 5. Mappers
 
-Mappers handle conversion between Entity (database) and Domain (business logic) models:
+Mappers handle conversion between Entity (database) and Domain (business logic)
+models:
 
 #### Example: CropDataMapper
 
@@ -347,7 +361,7 @@ class CropDataMapper @Inject constructor() {
             healthStatus = crop.healthStatus.name
         )
     }
-    
+
     fun toDomain(entity: CropDataEntity): CropData {
         return CropData(
             id = entity.id,
@@ -362,6 +376,7 @@ class CropDataMapper @Inject constructor() {
 ```
 
 **All Mappers**:
+
 - ChatMessageMapper
 - CropDataMapper
 - DiseaseAnalysisMapper
@@ -384,16 +399,17 @@ class CropLocalDataSource @Inject constructor(
     fun getUserCrops(userId: String): Flow<List<CropDataEntity>> {
         return cropDao.getUserCrops(userId)
     }
-    
+
     suspend fun saveCrop(crop: CropDataEntity) {
         cropDao.insertCrop(crop)
     }
-    
+
     // ... more methods
 }
 ```
 
 **All Local Data Sources**:
+
 - ChatLocalDataSource
 - CropLocalDataSource
 - DiseaseAnalysisLocalDataSource
@@ -410,7 +426,7 @@ Updated `DatabaseModule.kt`:
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    
+
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
@@ -422,21 +438,21 @@ object DatabaseModule {
             .fallbackToDestructiveMigration()
             .build()
     }
-    
+
     @Provides @Singleton
     fun provideCropDao(database: AppDatabase): CropDao = database.cropDao()
-    
+
     @Provides @Singleton
     fun provideChatDao(database: AppDatabase): ChatDao = database.chatDao()
-    
+
     @Provides @Singleton
-    fun provideDiseaseAnalysisDao(database: AppDatabase): DiseaseAnalysisDao = 
+    fun provideDiseaseAnalysisDao(database: AppDatabase): DiseaseAnalysisDao =
         database.diseaseAnalysisDao()
-    
+
     @Provides @Singleton
-    fun provideSeedAnalysisDao(database: AppDatabase): SeedAnalysisDao = 
+    fun provideSeedAnalysisDao(database: AppDatabase): SeedAnalysisDao =
         database.seedAnalysisDao()
-    
+
     @Provides @Singleton
     fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
 }
@@ -448,13 +464,13 @@ object DatabaseModule {
 
 ### Table Overview
 
-| Table Name | Primary Key | Indexes | Foreign Keys |
-|------------|-------------|---------|--------------|
-| `chat_messages` | id (String) | conversationId | None |
-| `crops` | id (String) | userId | None |
-| `disease_analyses` | id (String) | userId | None |
-| `seed_analyses` | id (String) | userId | None |
-| `users` | uid (String) | email | None |
+| Table Name         | Primary Key  | Indexes        | Foreign Keys |
+| ------------------ | ------------ | -------------- | ------------ |
+| `chat_messages`    | id (String)  | conversationId | None         |
+| `crops`            | id (String)  | userId         | None         |
+| `disease_analyses` | id (String)  | userId         | None         |
+| `seed_analyses`    | id (String)  | userId         | None         |
+| `users`            | uid (String) | email          | None         |
 
 ### Entity Relationships
 
@@ -465,7 +481,7 @@ User (1) ──── (Many) SeedQuality
 User (1) ──── (Many) ChatMessage (via conversationId)
 ```
 
-*Note: Relationships are logical, not enforced by foreign keys for flexibility*
+_Note: Relationships are logical, not enforced by foreign keys for flexibility_
 
 ---
 
@@ -481,15 +497,15 @@ class CropRepositoryImpl @Inject constructor(
     private val localDataSource: CropLocalDataSource,
     private val mapper: CropDataMapper
 ) : CropRepository {
-    
+
     override fun getUserCrops(userId: String): Flow<List<CropData>> = flow {
         // Try to load from remote
         try {
             val remoteCrops = remoteDataSource.fetchCrops(userId)
-            
+
             // Save to local cache
             localDataSource.saveCrops(mapper.toEntityList(remoteCrops))
-            
+
             emit(remoteCrops)
         } catch (e: Exception) {
             // Fallback to local cache
@@ -498,14 +514,14 @@ class CropRepositoryImpl @Inject constructor(
             }
         }
     }
-    
+
     override suspend fun saveCrop(crop: CropData): Result<Unit> = try {
         // Save to local first (optimistic update)
         localDataSource.saveCrop(mapper.toEntity(crop))
-        
+
         // Then sync to remote
         remoteDataSource.uploadCrop(crop)
-        
+
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
@@ -522,7 +538,7 @@ class ChatRepositoryImpl @Inject constructor(
     private val localDataSource: ChatLocalDataSource,
     private val mapper: ChatMessageMapper
 ) : ChatRepository {
-    
+
     override suspend fun sendMessage(
         message: String,
         conversationId: String
@@ -536,7 +552,7 @@ class ChatRepositoryImpl @Inject constructor(
         )
         localDataSource.saveMessage(mapper.toEntity(userMessage))
         emit(userMessage)
-        
+
         // Get AI response (streaming)
         val aiResponseBuilder = StringBuilder()
         geminiClient.getChatStream(getHistory(conversationId)).collect { chunk ->
@@ -549,7 +565,7 @@ class ChatRepositoryImpl @Inject constructor(
                 conversationId = conversationId
             ))
         }
-        
+
         // Save final AI message
         val finalAiMessage = ChatMessage(
             id = UUID.randomUUID().toString(),
@@ -560,7 +576,7 @@ class ChatRepositoryImpl @Inject constructor(
         localDataSource.saveMessage(mapper.toEntity(finalAiMessage))
         emit(finalAiMessage)
     }
-    
+
     private suspend fun getHistory(conversationId: String): List<ChatMessage> {
         val entities = localDataSource.getConversationMessages(conversationId)
             .first() // Get current snapshot
@@ -579,8 +595,8 @@ class HistoryViewModel @Inject constructor(
     private val localDataSource: DiseaseAnalysisLocalDataSource,
     private val mapper: DiseaseAnalysisMapper
 ) : ViewModel() {
-    
-    val recentAnalyses: StateFlow<List<DiseaseAnalysis>> = 
+
+    val recentAnalyses: StateFlow<List<DiseaseAnalysis>> =
         authRepository.getCurrentUser()?.let { user ->
             val thirtyDaysAgo = System.currentTimeMillis() - (30 * 24 * 60 * 60 * 1000L)
             localDataSource.getRecentAnalyses(user.uid, thirtyDaysAgo)
@@ -626,7 +642,8 @@ app/build/generated/ksp/debug/kotlin/
 1. Run the app on an emulator or device
 2. Open **View → Tool Windows → App Inspection**
 3. Select **Database Inspector** tab
-4. View tables: `chat_messages`, `crops`, `disease_analyses`, `seed_analyses`, `users`
+4. View tables: `chat_messages`, `crops`, `disease_analyses`, `seed_analyses`,
+   `users`
 5. Run queries directly in the inspector
 
 ### 4. Unit Test Example
@@ -634,10 +651,10 @@ app/build/generated/ksp/debug/kotlin/
 ```kotlin
 @RunWith(RobolectricTestRunner::class)
 class CropDaoTest {
-    
+
     private lateinit var database: AppDatabase
     private lateinit var cropDao: CropDao
-    
+
     @Before
     fun setup() {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -646,12 +663,12 @@ class CropDaoTest {
             .build()
         cropDao = database.cropDao()
     }
-    
+
     @After
     fun teardown() {
         database.close()
     }
-    
+
     @Test
     fun `insert and retrieve crop`() = runTest {
         // Given
@@ -674,11 +691,11 @@ class CropDaoTest {
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis()
         )
-        
+
         // When
         cropDao.insertCrop(crop)
         val retrieved = cropDao.getCropById("crop1")
-        
+
         // Then
         assertNotNull(retrieved)
         assertEquals("Tomato", retrieved?.cropName)
@@ -716,11 +733,11 @@ class SyncManager @Inject constructor(
         syncAnalyses(userId)
         syncChatHistory(userId)
     }
-    
+
     private suspend fun syncCrops(userId: String) {
         val localCrops = cropLocalDataSource.getUserCrops(userId).first()
         val remoteCrops = cropRemoteDataSource.fetchCrops(userId)
-        
+
         // Merge and resolve conflicts
         // Upload local-only crops
         // Download remote-only crops
@@ -754,7 +771,7 @@ class DataCleanupWorker : CoroutineWorker() {
         // Delete analyses older than 90 days
         val ninetyDaysAgo = System.currentTimeMillis() - (90 * 24 * 60 * 60 * 1000L)
         diseaseAnalysisDao.deleteOlderThan(ninetyDaysAgo)
-        
+
         return Result.success()
     }
 }
@@ -821,13 +838,14 @@ di/
 ✅ **Reactive Updates**: UI automatically updates via Flow  
 ✅ **Type Safety**: Compile-time SQL query validation  
 ✅ **Testability**: Easy to test with in-memory database  
-✅ **Scalability**: Foundation for future features  
+✅ **Scalability**: Foundation for future features
 
 ---
 
 ## Conclusion
 
-Room Database integration is **100% complete** and ready for use. The implementation follows:
+Room Database integration is **100% complete** and ready for use. The
+implementation follows:
 
 - ✅ Clean Architecture principles
 - ✅ SOLID design patterns
@@ -836,7 +854,8 @@ Room Database integration is **100% complete** and ready for use. The implementa
 - ✅ Dependency injection with Hilt
 - ✅ Type-safe database operations
 
-**Next Action**: Integrate local data sources into repository implementations for full offline-first architecture.
+**Next Action**: Integrate local data sources into repository implementations
+for full offline-first architecture.
 
 ---
 

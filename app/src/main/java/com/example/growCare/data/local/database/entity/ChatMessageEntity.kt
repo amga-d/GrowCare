@@ -14,5 +14,6 @@ data class ChatMessageEntity(
     val content: String,
     val isUser: Boolean,
     val timestamp: Long,
-    val conversationId: String
+    val conversationId: String,
+    val imageUrl: String? = null
 )

@@ -33,6 +33,9 @@ datastorePreferences = "1.1.1"
 # Image Loading
 coil = "2.5.0"
 
+# Markdown Rendering
+composeMarkdown = "0.3.4"
+
 # Camera
 camerax = "1.3.1"
 
@@ -99,6 +102,9 @@ camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "
 
 # Image Loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
+# Markdown Rendering
+compose-markdown = { group = "com.github.jeziellago", name = "compose-markdown", version.ref = "composeMarkdown" }
 
 # Coroutines
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlayServices" }

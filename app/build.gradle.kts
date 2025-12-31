@@ -118,6 +118,9 @@ dependencies {
     // Coil - Image Loading
     implementation(libs.coil.compose)
     
+    // Markdown Rendering
+    implementation(libs.compose.markdown)
+    
     // Coroutines
     implementation(libs.kotlinx.coroutines.play.services)
     
