@@ -112,7 +112,10 @@ fun ProfileScreen(
             }
 
             // Profile Header Section
-            ProfileHeaderSection(user = uiState.user)
+            ProfileHeaderSection(
+                user = uiState.user,
+                activityStats = uiState.activityStats
+            )
 
             // Account Section
             AccountSection(user = uiState.user)
@@ -206,7 +209,10 @@ fun ProfileTopBar() {
 }
 
 @Composable
-fun ProfileHeaderSection(user: com.example.growCare.domain.model.User? = null) {
+fun ProfileHeaderSection(
+    user: com.example.growCare.domain.model.User? = null,
+    activityStats: com.example.growCare.domain.model.ActivityStats = com.example.growCare.domain.model.ActivityStats()
+) {
     val gradientColors = listOf(
         MaterialTheme.colorScheme.primary,
         MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
@@ -326,17 +332,17 @@ fun ProfileHeaderSection(user: com.example.growCare.domain.model.User? = null) {
                     .padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(value = "12", label = "Scans")
+                StatItem(value = activityStats.totalScans.toString(), label = "Scans")
                 VerticalDivider(
                     modifier = Modifier.height(40.dp),
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f)
                 )
-                StatItem(value = "8", label = "Crops")
+                StatItem(value = activityStats.totalCrops.toString(), label = "Crops")
                 VerticalDivider(
                     modifier = Modifier.height(40.dp),
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f)
                 )
-                StatItem(value = "24", label = "Chats")
+                StatItem(value = activityStats.totalChats.toString(), label = "Chats")
             }
         }
     }

@@ -3,7 +3,9 @@ package com.example.growCare.presentation.screens.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.growCare.data.remote.firebase.FirebaseAuthDataSource
+import com.example.growCare.domain.model.ActivityStats
 import com.example.growCare.domain.model.User
+import com.example.growCare.domain.usecase.stats.GetActivityStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +16,7 @@ import javax.inject.Inject
 
 data class ProfileUiState(
     val user: User? = null,
+    val activityStats: ActivityStats = ActivityStats(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -25,7 +28,8 @@ sealed interface ProfileAction {
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authDataSource: FirebaseAuthDataSource
+    private val authDataSource: FirebaseAuthDataSource,
+    private val getActivityStatsUseCase: GetActivityStatsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -33,6 +37,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadUserProfile()
+        loadActivityStats()
     }
 
     fun onAction(action: ProfileAction) {
@@ -83,6 +88,19 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             authDataSource.signOut()
             _uiState.update { ProfileUiState() }
+        }
+    }
+
+    private fun loadActivityStats() {
+        viewModelScope.launch {
+            try {
+                getActivityStatsUseCase().collect { stats ->
+                    _uiState.update { it.copy(activityStats = stats) }
+                }
+            } catch (e: Exception) {
+                // Silently fail for stats, don't show error to user
+                _uiState.update { it.copy(activityStats = ActivityStats()) }
+            }
         }
     }
 }
