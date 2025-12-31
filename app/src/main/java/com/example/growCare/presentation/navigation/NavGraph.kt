@@ -285,8 +285,13 @@ fun NavGraph(
                     }
                 },
                 onNavigateToFertilizerResult = { fertilizerId ->
-                    // TODO: Load fertilizer from ID and navigate
-                    navController.navigate(Screen.FERTILIZER)
+                    scope.launch {
+                        val recommendation = historyViewModel.loadFertilizerById(fertilizerId)
+                        if (recommendation != null) {
+                            navigationViewModel.setFertilizerRecommendation(recommendation)
+                            navController.navigate(Screen.FERTILIZER_RESULT)
+                        }
+                    }
                 },
                 onNavigateToChat = { conversationId ->
                     navController.navigate("chat?conversationId=$conversationId")

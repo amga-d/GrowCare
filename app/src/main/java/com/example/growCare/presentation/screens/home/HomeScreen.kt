@@ -77,20 +77,6 @@ fun HomeScreen(
                 onProfileClick = onNavigateToProfile
             ) 
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { /* TODO: Handle Scan */ },
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-                elevation = FloatingActionButtonDefaults.elevation(6.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Scan",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(

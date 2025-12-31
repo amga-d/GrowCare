@@ -3,12 +3,14 @@ package com.example.growCare.presentation.screens.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.growCare.domain.model.DiseaseAnalysis
+import com.example.growCare.domain.model.FertilizerRecommendation
 import com.example.growCare.domain.model.SeedQuality
 import com.example.growCare.domain.usecase.chat.GetAllConversationsUseCase
 import com.example.growCare.domain.usecase.detection.GetDiseaseAnalysisByIdUseCase
 import com.example.growCare.domain.usecase.detection.GetDiseaseHistoryUseCase
 import com.example.growCare.domain.usecase.detection.GetSeedAnalysisByIdUseCase
 import com.example.growCare.domain.usecase.detection.GetSeedHistoryUseCase
+import com.example.growCare.domain.usecase.fertilizer.GetFertilizerByIdUseCase
 import com.example.growCare.domain.usecase.fertilizer.GetFertilizerHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -22,7 +24,8 @@ class HistoryViewModel @Inject constructor(
     private val getFertilizerHistoryUseCase: GetFertilizerHistoryUseCase,
     private val getAllConversationsUseCase: GetAllConversationsUseCase,
     private val getDiseaseAnalysisByIdUseCase: GetDiseaseAnalysisByIdUseCase,
-    private val getSeedAnalysisByIdUseCase: GetSeedAnalysisByIdUseCase
+    private val getSeedAnalysisByIdUseCase: GetSeedAnalysisByIdUseCase,
+    private val getFertilizerByIdUseCase: GetFertilizerByIdUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HistoryUiState())
@@ -151,6 +154,31 @@ class HistoryViewModel @Inject constructor(
             _uiState.update { it.copy(
                 isLoading = false,
                 error = e.message ?: "Failed to load seed analysis"
+            )}
+            null
+        }
+    }
+
+    /**
+     * Load a specific fertilizer recommendation by ID
+     * Returns the fertilizer recommendation or null if not found
+     */
+    suspend fun loadFertilizerById(recommendationId: String): FertilizerRecommendation? {
+        return try {
+            _uiState.update { it.copy(isLoading = true) }
+            val result = getFertilizerByIdUseCase(recommendationId)
+            _uiState.update { it.copy(isLoading = false) }
+            
+            if (result.isSuccess) {
+                result.getOrNull()
+            } else {
+                _uiState.update { it.copy(error = "Fertilizer recommendation not found") }
+                null
+            }
+        } catch (e: Exception) {
+            _uiState.update { it.copy(
+                isLoading = false,
+                error = e.message ?: "Failed to load fertilizer recommendation"
             )}
             null
         }
