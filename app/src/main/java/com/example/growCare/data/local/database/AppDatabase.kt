@@ -19,6 +19,7 @@ import com.example.growCare.data.local.database.entity.*
  * Version History:
  * - Version 1: Initial database schema with all core entities
  * - Version 2: Added imageUrl field to ChatMessageEntity
+ * - Version 3: Added AITipEntity for caching AI-generated tips
  */
 @Database(
     entities = [
@@ -26,9 +27,10 @@ import com.example.growCare.data.local.database.entity.*
         CropDataEntity::class,
         DiseaseAnalysisEntity::class,
         SeedQualityEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        AITipEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(StringListConverter::class)
@@ -58,6 +60,11 @@ abstract class AppDatabase : RoomDatabase() {
      * Provides access to user data operations
      */
     abstract fun userDao(): UserDao
+    
+    /**
+     * Provides access to AI tips caching operations
+     */
+    abstract fun aiTipDao(): AITipDao
     
     companion object {
         const val DATABASE_NAME = "growcare_database"

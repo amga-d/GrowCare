@@ -141,8 +141,12 @@ fun HomeScreen(
                 onDiseaseScanClick = onNavigateToDiseaseScan
             )
 
-            // 4. Crop Health Summary Section
-            CropHealthSummarySection()
+            // 4. Tips & Insights Section
+            TipsInsightsSection(
+                tips = uiState.aiTips,
+                isLoading = uiState.isLoadingTips,
+                onAskAIClick = onNavigateToChat
+            )
             
             // Spacer for FAB and BottomBar
             Spacer(modifier = Modifier.height(80.dp))
@@ -497,15 +501,34 @@ fun QuickActionCard(
 }
 
 @Composable
-fun CropHealthSummarySection() {
+fun TipsInsightsSection(
+    tips: List<Pair<String, String>> = emptyList(),
+    isLoading: Boolean = false,
+    onAskAIClick: () -> Unit = {}
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Crop Health Summary",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = 24.dp, bottom = 12.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "AI Tips",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            if (!isLoading) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "AI Powered",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -513,77 +536,121 @@ fun CropHealthSummarySection() {
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Header
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Field A-1 (Corn)",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Surface(
-                        color = com.example.growCare.ui.theme.WarningYellow,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                when {
+                    isLoading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Generating AI tips...",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    tips.isEmpty() -> {
                         Text(
-                            text = "Warning",
-                            color = com.example.growCare.ui.theme.WarningOrange,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            text = "No tips available",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
+                    else -> {
+                        tips.forEachIndexed { index, tip ->
+                            TipCard(
+                                icon = if (index == 0) Icons.Default.Lightbulb else Icons.Default.CalendarMonth,
+                                title = tip.first,
+                                description = tip.second
+                            )
+                        }
+                    }
                 }
-
-                Text(
-                    text = "Recent harvest",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-                )
-
-                // Progress Bar
-                LinearProgressIndicator(
-                    progress = { 0.65f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Labels
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Soil Moisture",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = "45%",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // Button
+                
+                // AI assistance prompt
                 Button(
-                    onClick = { /* TODO */ },
+                    onClick = onAskAIClick,
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.primary
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("View Crop Overview", fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.ChatBubbleOutline,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Ask AI for More Tips")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun TipCard(
+    icon: ImageVector,
+    title: String,
+    description: String
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = description,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }

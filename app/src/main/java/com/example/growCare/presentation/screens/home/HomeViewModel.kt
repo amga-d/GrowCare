@@ -6,6 +6,7 @@ import com.example.growCare.domain.model.User
 import com.example.growCare.domain.model.WeatherData
 import com.example.growCare.domain.repository.AuthRepository
 import com.example.growCare.domain.repository.WeatherRepository
+import com.example.growCare.domain.usecase.tips.GenerateAITipsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,20 +22,28 @@ import javax.inject.Inject
 data class HomeUiState(
     val user: User? = null,
     val weather: WeatherData? = null,
+    val aiTips: List<Pair<String, String>> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingWeather: Boolean = false,
+    val isLoadingTips: Boolean = false,
     val error: String? = null,
     val weatherError: String? = null
 )
 
 /**
  * ViewModel for HomeScreen
- * Manages user data, weather data, and home screen state
+ * Manages user data, weather data, and AI tips
+ * 
+ * Follows MVVM architecture:
+ * - Uses UseCases for business logic
+ * - Manages UI state with StateFlow
+ * - No direct access to data sources
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
+    private val generateAITipsUseCase: GenerateAITipsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -43,6 +52,21 @@ class HomeViewModel @Inject constructor(
     init {
         loadUserData()
         loadWeatherData()
+    }
+
+    /**
+     * Load weather data and generate AI tips when weather is available
+     */
+    private fun onWeatherLoaded(weather: WeatherData) {
+        _uiState.update {
+            it.copy(
+                weather = weather,
+                isLoadingWeather = false,
+                weatherError = null
+            )
+        }
+        // Generate AI tips based on weather
+        generateAITips(weather)
     }
 
     /**
@@ -88,13 +112,7 @@ class HomeViewModel @Inject constructor(
                     }
                 }
                 .collect { weatherData ->
-                    _uiState.update {
-                        it.copy(
-                            weather = weatherData,
-                            isLoadingWeather = false,
-                            weatherError = null
-                        )
-                    }
+                    onWeatherLoaded(weatherData)
                 }
         }
     }
@@ -141,6 +159,34 @@ class HomeViewModel @Inject constructor(
                     isLoadingWeather = false,
                     weatherError = "Location permission required for weather data"
                 )
+            }
+        }
+    }
+
+    /**
+     * Generate AI-powered agricultural tips using UseCase
+     * Follows Clean Architecture - ViewModel calls UseCase, not Repository
+     */
+    private fun generateAITips(weather: WeatherData) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingTips = true) }
+            
+            try {
+                generateAITipsUseCase(weather).collect { tips ->
+                    _uiState.update {
+                        it.copy(
+                            aiTips = tips,
+                            isLoadingTips = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        aiTips = emptyList(),
+                        isLoadingTips = false
+                    )
+                }
             }
         }
     }

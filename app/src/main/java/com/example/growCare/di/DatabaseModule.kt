@@ -62,4 +62,10 @@ object DatabaseModule {
     fun provideUserDao(database: AppDatabase): UserDao {
         return database.userDao()
     }
+    
+    @Provides
+    @Singleton
+    fun provideAITipDao(database: AppDatabase): AITipDao {
+        return database.aiTipDao()
+    }
 }
