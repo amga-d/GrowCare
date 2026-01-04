@@ -20,6 +20,7 @@ import com.example.growCare.presentation.screens.fertilizer.FertilizerScreen
 import com.example.growCare.presentation.screens.fertilizer.FertilizerResultScreen
 import com.example.growCare.presentation.screens.home.HomeScreen
 import com.example.growCare.presentation.screens.profile.ProfileScreen
+import com.example.growCare.presentation.screens.profile.EditProfileScreen
 import com.example.growCare.presentation.screens.seed.SeedScanScreen
 import com.example.growCare.presentation.screens.seed.SeedResultScreen
 import kotlinx.coroutines.launch
@@ -245,6 +246,9 @@ fun NavGraph(
                 onNavigateToChat = {
                     navController.navigate(Screen.CHAT)
                 },
+                onNavigateToEditProfile = {
+                    navController.navigate(Screen.EDIT_PROFILE)
+                },
                 onLogout = {
                     // Navigate to login and clear back stack
                     navController.navigate(Screen.LOGIN) {
@@ -253,6 +257,15 @@ fun NavGraph(
                 },
                 themeMode = themeMode,
                 onThemeModeChange = onThemeModeChange
+            )
+        }
+        
+        // Edit Profile
+        composable(Screen.EDIT_PROFILE) {
+            EditProfileScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
         

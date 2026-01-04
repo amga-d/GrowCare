@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.example.growCare.data.local.preferences.ThemeMode
 import com.example.growCare.presentation.components.ThemeToggleSelector
 
@@ -39,6 +41,7 @@ import com.example.growCare.presentation.components.ThemeToggleSelector
 fun ProfileScreen(
     onNavigateToHome: () -> Unit = {},
     onNavigateToChat: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
     themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -114,11 +117,12 @@ fun ProfileScreen(
             // Profile Header Section
             ProfileHeaderSection(
                 user = uiState.user,
-                activityStats = uiState.activityStats
+                activityStats = uiState.activityStats,
+                onEditProfile = onNavigateToEditProfile
             )
 
             // Account Section
-            AccountSection(user = uiState.user)
+            AccountSection(user = uiState.user, onEditProfile = onNavigateToEditProfile)
             
             // Appearance Section (Theme Toggle)
             AppearanceSection(
@@ -186,32 +190,14 @@ fun ProfileTopBar() {
             color = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.weight(1f)
         )
-        TextButton(
-            onClick = { /* TODO: Edit Profile */ },
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "Edit",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
     }
 }
 
 @Composable
 fun ProfileHeaderSection(
     user: com.example.growCare.domain.model.User? = null,
-    activityStats: com.example.growCare.domain.model.ActivityStats = com.example.growCare.domain.model.ActivityStats()
+    activityStats: com.example.growCare.domain.model.ActivityStats = com.example.growCare.domain.model.ActivityStats(),
+    onEditProfile: () -> Unit = {}
 ) {
     val gradientColors = listOf(
         MaterialTheme.colorScheme.primary,
@@ -247,12 +233,21 @@ fun ProfileHeaderSection(
                         .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Profile Avatar",
-                        modifier = Modifier.size(60.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    if (user?.profilePictureUrl != null) {
+                        AsyncImage(
+                            model = user.profilePictureUrl,
+                            contentDescription = "Profile Picture",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Profile Avatar",
+                            modifier = Modifier.size(60.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 // Camera Badge
@@ -263,7 +258,7 @@ fun ProfileHeaderSection(
                     modifier = Modifier
                         .size(36.dp)
                         .offset(x = (-4).dp, y = (-4).dp)
-                        .clickable { /* TODO: Change Photo */ }
+                        .clickable { onEditProfile() }
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -367,14 +362,29 @@ private fun StatItem(value: String, label: String) {
 }
 
 @Composable
-fun AccountSection(user: com.example.growCare.domain.model.User? = null) {
+fun AccountSection(user: com.example.growCare.domain.model.User? = null, onEditProfile: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .padding(top = 20.dp)
     ) {
-        SectionHeader(title = "ACCOUNT")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SectionHeader(title = "ACCOUNT")
+            TextButton(onClick = onEditProfile) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = "Edit",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Edit", fontSize = 14.sp)
+            }
+        }
         
         Card(
             modifier = Modifier.fillMaxWidth(),

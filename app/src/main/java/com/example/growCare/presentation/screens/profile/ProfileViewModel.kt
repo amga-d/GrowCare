@@ -6,6 +6,8 @@ import com.example.growCare.data.remote.firebase.FirebaseAuthDataSource
 import com.example.growCare.domain.model.ActivityStats
 import com.example.growCare.domain.model.User
 import com.example.growCare.domain.usecase.stats.GetActivityStatsUseCase
+import com.example.growCare.domain.usecase.user.GetUserProfileUseCase
+import com.example.growCare.domain.usecase.user.SaveUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +31,9 @@ sealed interface ProfileAction {
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val authDataSource: FirebaseAuthDataSource,
-    private val getActivityStatsUseCase: GetActivityStatsUseCase
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val getActivityStatsUseCase: GetActivityStatsUseCase,
+    private val saveUserProfileUseCase: SaveUserProfileUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -52,27 +56,17 @@ class ProfileViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                val firebaseUser = authDataSource.getCurrentUser()
-                if (firebaseUser != null) {
-                    val user = User(
-                        uid = firebaseUser.uid,
-                        email = firebaseUser.email ?: "",
-                        displayName = firebaseUser.displayName ?: "User",
-                        profilePictureUrl = firebaseUser.photoUrl?.toString(),
-                        phoneNumber = firebaseUser.phoneNumber,
-                        createdAt = firebaseUser.metadata?.creationTimestamp ?: System.currentTimeMillis(),
-                        lastLoginAt = firebaseUser.metadata?.lastSignInTimestamp ?: System.currentTimeMillis()
-                    )
-                    _uiState.update { it.copy(user = user, isLoading = false) }
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            user = null,
-                            isLoading = false,
-                            error = "No user logged in"
-                        )
+                // Get user profile from repository (Firestore/Room)
+                getUserProfileUseCase()
+                    .collect { user ->
+                        _uiState.update { state ->
+                            state.copy(
+                                user = user,
+                                isLoading = false,
+                                error = if (user == null) "No user profile found" else null
+                            )
+                        }
                     }
-                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(

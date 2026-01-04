@@ -30,7 +30,7 @@ import com.example.growCare.data.local.database.entity.*
         AITipEntity::class
     ],
     version = 4,
-    exportSchema = true
+    exportSchema = false
 )
 @TypeConverters(StringListConverter::class)
 abstract class AppDatabase : RoomDatabase() {

@@ -49,4 +49,10 @@ abstract class RepositoryModule {
     abstract fun bindTipsRepository(
         impl: com.example.growCare.data.repository.TipsRepositoryImpl
     ): com.example.growCare.domain.repository.TipsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRepository(
+        impl: com.example.growCare.data.repository.UserRepositoryImpl
+    ): com.example.growCare.domain.repository.UserRepository
 }

@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import java.util.Calendar
 
 @Composable
@@ -167,16 +169,31 @@ fun HeaderSection(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Avatar Image
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "User Avatar",
+        Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(8.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            if (user?.profilePictureUrl != null) {
+                AsyncImage(
+                    model = user.profilePictureUrl,
+                    contentDescription = "User Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "User Avatar",
+                    modifier = Modifier
+                        .size(32.dp)
+                        .padding(8.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(12.dp))
 

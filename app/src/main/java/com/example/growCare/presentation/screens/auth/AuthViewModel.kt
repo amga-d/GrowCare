@@ -3,6 +3,7 @@ package com.example.growCare.presentation.screens.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.growCare.data.remote.firebase.FirebaseAuthDataSource
+import com.example.growCare.domain.usecase.user.SaveUserProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,8 @@ sealed interface AuthAction {
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authDataSource: FirebaseAuthDataSource
+    private val authDataSource: FirebaseAuthDataSource,
+    private val saveUserProfileUseCase: SaveUserProfileUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -140,18 +142,50 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             authDataSource.signUpWithEmail(email, password, displayName)
-                .onSuccess { _ ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSignedIn = true,
-                            email = "",
-                            password = "",
-                            confirmPassword = "",
-                            displayName = ""
-                        )
-                    }
-                    _events.emit(AuthEvent.NavigateToHome)
+                .onSuccess { firebaseUser ->
+                    // Immediately create Firestore profile after signup
+                    val user = com.example.growCare.domain.model.User(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email ?: email,
+                        displayName = displayName,
+                        phoneNumber = null,
+                        location = null,
+                        farmSize = null,
+                        profilePictureUrl = null,
+                        preferredCrops = emptyList(),
+                        createdAt = System.currentTimeMillis(),
+                        lastLoginAt = System.currentTimeMillis()
+                    )
+                    
+                    saveUserProfileUseCase(user)
+                        .onSuccess {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isSignedIn = true,
+                                    email = "",
+                                    password = "",
+                                    confirmPassword = "",
+                                    displayName = ""
+                                )
+                            }
+                            _events.emit(AuthEvent.NavigateToHome)
+                        }
+                        .onFailure { error ->
+                            // Profile creation failed, but auth succeeded
+                            // Still navigate to home, profile will be created later
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isSignedIn = true,
+                                    email = "",
+                                    password = "",
+                                    confirmPassword = "",
+                                    displayName = ""
+                                )
+                            }
+                            _events.emit(AuthEvent.NavigateToHome)
+                        }
                 }
                 .onFailure { error ->
                     _uiState.update { 

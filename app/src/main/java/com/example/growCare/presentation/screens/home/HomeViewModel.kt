@@ -7,6 +7,9 @@ import com.example.growCare.domain.model.WeatherData
 import com.example.growCare.domain.repository.AuthRepository
 import com.example.growCare.domain.repository.WeatherRepository
 import com.example.growCare.domain.usecase.tips.GenerateAITipsUseCase
+import com.example.growCare.domain.usecase.user.GetUserProfileUseCase
+import com.example.growCare.domain.usecase.user.SaveUserProfileUseCase
+import com.example.growCare.data.remote.firebase.FirebaseAuthDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +46,10 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val weatherRepository: WeatherRepository,
-    private val generateAITipsUseCase: GenerateAITipsUseCase
+    private val generateAITipsUseCase: GenerateAITipsUseCase,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val saveUserProfileUseCase: SaveUserProfileUseCase,
+    private val authDataSource: FirebaseAuthDataSource
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -70,19 +76,26 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Load current user data
+     * Load current user data from repository (observes real-time changes)
      */
     private fun loadUserData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val user = authRepository.getCurrentUser()
-                _uiState.update {
-                    it.copy(
-                        user = user,
-                        isLoading = false,
-                        error = null
-                    )
+                // Observe user profile from Firestore/Room for real-time updates
+                getUserProfileUseCase().collect { user ->
+                    if (user == null) {
+                        // Profile doesn't exist, create it from Firebase Auth
+                        createProfileFromAuth()
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                user = user,
+                                isLoading = false,
+                                error = null
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update {
@@ -91,6 +104,39 @@ class HomeViewModel @Inject constructor(
                         error = e.message
                     )
                 }
+            }
+        }
+    }
+
+    private fun createProfileFromAuth() {
+        viewModelScope.launch {
+            try {
+                val firebaseUser = authDataSource.getCurrentUser()
+                if (firebaseUser != null) {
+                    val newUser = User(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email ?: "",
+                        displayName = firebaseUser.displayName ?: firebaseUser.email?.substringBefore('@'),
+                        phoneNumber = firebaseUser.phoneNumber,
+                        location = null,
+                        farmSize = null,
+                        profilePictureUrl = firebaseUser.photoUrl?.toString(),
+                        preferredCrops = emptyList(),
+                        createdAt = System.currentTimeMillis(),
+                        lastLoginAt = System.currentTimeMillis()
+                    )
+                    
+                    saveUserProfileUseCase(newUser)
+                        .onSuccess {
+                            // The collect above will pick up the new profile
+                            _uiState.update { it.copy(isLoading = false) }
+                        }
+                        .onFailure {
+                            _uiState.update { it.copy(isLoading = false) }
+                        }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
