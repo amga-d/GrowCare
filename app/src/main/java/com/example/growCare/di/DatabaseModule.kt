@@ -35,12 +35,6 @@ object DatabaseModule {
     
     @Provides
     @Singleton
-    fun provideCropDao(database: AppDatabase): CropDao {
-        return database.cropDao()
-    }
-    
-    @Provides
-    @Singleton
     fun provideChatDao(database: AppDatabase): ChatDao {
         return database.chatDao()
     }

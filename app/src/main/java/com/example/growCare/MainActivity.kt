@@ -21,6 +21,30 @@ import com.example.growCare.ui.theme.MobileAppDevTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+/**
+ * GrowCare - AI-Powered Smart Agriculture Assistant
+ * Mobile Application Development Final Project
+ * 
+ * Group Members:
+ * 1. Amgad Aref Abdulrazzaq Derhem Al-Ameri - 23523242
+ * 2. Ahnaf Rafi Raditya - 23523070
+ * 3. Dhani Fatih Ilyasa - 23523172
+ * 4. Ravfael Novfito Handoyo - 23523257
+ * 
+ * Login Credentials:
+ * Email: expo.user@growcare.com
+ * Password: growcare123
+ * 
+ * Build Requirements:
+ * - JVM Target: 17 (Java 17)
+ * - Android Studio: Hedgehog or later
+ * - Gradle: 8.7+
+ * - Minimum SDK: 24 (Android 7.0)
+ * - Target SDK: 36 (Android 14)
+ * 
+ * Note: If you encounter build issues, ensure you're using JDK 17 or later.
+ * Check your JAVA_HOME environment variable and Android Studio's JDK settings.
+ */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 

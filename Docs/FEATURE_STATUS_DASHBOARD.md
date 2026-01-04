@@ -65,7 +65,6 @@ firestore/
 │       └── createdAt: timestamp ✅
 │
 └── (Other collections ready to add)
-    ├── crops/
     ├── chat_history/
     ├── disease_scans/
     └── seed_scans/
@@ -230,10 +229,9 @@ Success Rate:         100%
 2. 🚀 **Scan** plants for disease detection
 3. 🚀 **Analyze** seed quality with AI
 4. 🚀 **Calculate** fertilizer requirements
-5. 🚀 **Track** crop health and growth
-6. 🚀 **Get** weather updates
-7. 🚀 **Upload** and manage profile pictures
-8. 🚀 **Edit** profile information
+5. 🚀 **Get** weather updates
+6. 🚀 **Upload** and manage profile pictures
+7. 🚀 **Edit** profile information
 
 ---
 
@@ -298,9 +296,6 @@ SPACING:
 │ │ 💬   │ │ 🌱   │ │ 🔍   │        │
 │ │ Chat │ │Fert. │ │Scan  │        │
 │ └──────┘ └──────┘ └──────┘        │
-├─────────────────────────────────────┤
-│ 🌾 Crop Health                     │
-│    3 crops being monitored          │
 └─────────────────────────────────────┘
 ```
 

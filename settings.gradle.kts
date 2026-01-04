@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mobile App Dev"
+rootProject.name = "GrowCare_2025"
 include(":app")

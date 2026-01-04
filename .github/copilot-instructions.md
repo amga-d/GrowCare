@@ -33,12 +33,10 @@
 GrowCare is a comprehensive agricultural management application that helps
 farmers and agricultural professionals with:
 
-- **Home Dashboard**: Weather integration, crop health monitoring, quick action
-  shortcuts
+- **Home Dashboard**: Weather integration and quick action shortcuts
 - **AI Assistant**: Gemini-powered chat for agricultural advice and plant
   disease diagnosis
-- **Fertilizer Calculator**: NPK calculation based on crop type, soil
-  conditions, and area
+- **Fertilizer Calculator**: NPK calculation based on soil conditions and area
 - **Seed Quality Scanner**: Camera-based seed quality analysis using AI
 - **Disease Detection**: Plant disease identification through image scanning
 - **Profile Management**: User settings and preferences
@@ -46,7 +44,7 @@ farmers and agricultural professionals with:
 ### Core Features
 
 - Real-time AI-powered agricultural assistance
-- Image-based crop and disease analysis
+- Image-based disease analysis
 - Firebase Authentication for secure user management
 - Cloud-based data storage with Firestore
 - Offline-first architecture for rural connectivity
@@ -397,13 +395,13 @@ class FirestoreDataSource @Inject constructor() {
 
     private val db = FirebaseFirestore.getInstance()
 
-    suspend fun saveCropData(userId: String, cropData: CropDataEntity): Result<Unit> =
+    suspend fun saveDiseaseAnalysis(userId: String, analysisData: DiseaseAnalysisEntity): Result<Unit> =
         suspendCancellableCoroutine { continuation ->
             db.collection("users")
                 .document(userId)
-                .collection("crops")
-                .document(cropData.id)
-                .set(cropData)
+                .collection("disease_analyses")
+                .document(analysisData.id)
+                .set(analysisData)
                 .addOnSuccessListener {
                     continuation.resume(Result.success(Unit))
                 }
@@ -412,25 +410,26 @@ class FirestoreDataSource @Inject constructor() {
                 }
         }
 
-    fun getCropDataStream(userId: String): Flow<List<CropDataEntity>> = callbackFlow {
+    fun getDiseaseAnalysisStream(userId: String): Flow<List<DiseaseAnalysisEntity>> = callbackFlow {
         val listener = db.collection("users")
             .document(userId)
-            .collection("crops")
+            .collection("disease_analyses")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener
                 }
 
-                val crops = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(CropDataEntity::class.java)
+                val analyses = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(DiseaseAnalysisEntity::class.java)
                 } ?: emptyList()
 
-                trySend(crops)
+                trySend(analyses)
             }
 
         awaitClose { listener.remove() }
     }
+}
 }
 ```
 
@@ -715,7 +714,7 @@ object DatabaseModule {
     }
 
     @Provides
-    fun provideCropDao(database: AppDatabase): CropDao = database.cropDao()
+    fun provideDiseaseAnalysisDao(database: AppDatabase): DiseaseAnalysisDao = database.diseaseAnalysisDao()
 }
 
 // di/RepositoryModule.kt
@@ -774,8 +773,7 @@ com.example.mobileappdev/
 │   │   │   ├── HomeViewModel.kt
 │   │   │   └── components/
 │   │   │       ├── WeatherCard.kt
-│   │   │       ├── QuickActionGrid.kt
-│   │   │       └── CropHealthSection.kt
+│   │   │       └── QuickActionGrid.kt
 │   │   │
 │   │   ├── chat/
 │   │   │   ├── ChatScreen.kt
@@ -818,7 +816,6 @@ com.example.mobileappdev/
 ├── domain/                                # Business Logic Layer
 │   ├── model/
 │   │   ├── User.kt
-│   │   ├── CropData.kt
 │   │   ├── ChatMessage.kt
 │   │   ├── DiseaseAnalysis.kt
 │   │   ├── FertilizerRecommendation.kt
@@ -827,7 +824,6 @@ com.example.mobileappdev/
 │   ├── repository/
 │   │   ├── AuthRepository.kt
 │   │   ├── ChatRepository.kt
-│   │   ├── CropRepository.kt
 │   │   ├── DiseaseRepository.kt
 │   │   └── UserRepository.kt
 │   │
@@ -849,7 +845,6 @@ com.example.mobileappdev/
     ├── repository/                        # Repository Implementations
     │   ├── AuthRepositoryImpl.kt
     │   ├── ChatRepositoryImpl.kt
-    │   ├── CropRepositoryImpl.kt
     │   ├── DiseaseRepositoryImpl.kt
     │   └── UserRepositoryImpl.kt
     │
@@ -865,19 +860,19 @@ com.example.mobileappdev/
     │   ├── database/
     │   │   ├── AppDatabase.kt
     │   │   ├── dao/
-    │   │   │   ├── CropDao.kt
     │   │   │   ├── ChatDao.kt
+    │   │   │   ├── DiseaseAnalysisDao.kt
     │   │   │   └── UserDao.kt
     │   │   └── entity/
-    │   │       ├── CropEntity.kt
     │   │       ├── ChatMessageEntity.kt
+    │   │       ├── DiseaseAnalysisEntity.kt
     │   │       └── UserEntity.kt
     │   └── preferences/
     │       └── UserPreferences.kt
     │
     └── mapper/                            # Data <-> Domain Mappers
-        ├── CropMapper.kt
         ├── ChatMapper.kt
+        ├── DiseaseMapper.kt
         └── UserMapper.kt
 ```
 
@@ -894,9 +889,9 @@ com.example.mobileappdev/
   `SendChatMessageUseCase.kt`)
 - **Data Sources**: `[Source][Feature]DataSource.kt` (e.g.,
   `FirebaseAuthDataSource.kt`)
-- **Entities**: `[Feature]Entity.kt` (e.g., `CropEntity.kt`)
-- **DAOs**: `[Feature]Dao.kt` (e.g., `CropDao.kt`)
-- **Mappers**: `[Feature]Mapper.kt` (e.g., `CropMapper.kt`)
+- **Entities**: `[Feature]Entity.kt` (e.g., `DiseaseAnalysisEntity.kt`)
+- **DAOs**: `[Feature]Dao.kt` (e.g., `DiseaseAnalysisDao.kt`)
+- **Mappers**: `[Feature]Mapper.kt` (e.g., `DiseaseMapper.kt`)
 
 ### Classes & Interfaces
 
@@ -908,7 +903,7 @@ com.example.mobileappdev/
 
 ### Variables & Functions
 
-- **Variables**: camelCase (e.g., `userName`, `cropData`)
+- **Variables**: camelCase (e.g., `userName`, `analysisData`)
 - **Constants**: SCREAMING_SNAKE_CASE (e.g., `MAX_IMAGE_SIZE`, `API_TIMEOUT`)
 - **Functions**: camelCase starting with verb (e.g., `loadUserData()`,
   `calculateNPK()`)
@@ -1069,11 +1064,11 @@ fun PrimaryButton(
 
 ```kotlin
 // ✅ DO: Use data classes for models
-data class CropData(
+data class DiseaseAnalysis(
     val id: String,
-    val name: String,
-    val plantedDate: Long,
-    val expectedHarvestDate: Long
+    val diseaseName: String,
+    val confidence: Float,
+    val detectedDate: Long
 )
 
 // ✅ DO: Use sealed classes for states
@@ -1113,7 +1108,6 @@ fun findUser(id: String): User? {
 // Features:
 // - Weather display (integrate weather API)
 // - Quick action buttons (navigation to features)
-// - Crop health overview
 // - Recent activity feed
 
 @Composable
@@ -1126,7 +1120,6 @@ fun HomeScreen(
     LazyColumn {
         item { WeatherCard(uiState.weather) }
         item { QuickActionGrid(onNavigateToFeature) }
-        item { CropHealthSection(uiState.crops) }
         item { RecentActivitySection(uiState.activities) }
     }
 }
@@ -1189,13 +1182,12 @@ class ChatViewModel @Inject constructor(
 
 ```kotlin
 // Features:
-// - Input: crop type, soil type, area, current NPK
+// - Input: soil type, area, current NPK
 // - Calculate NPK requirements
 // - Recommend fertilizer products
 // - Cost estimation
 
 data class FertilizerInput(
-    val cropType: String,
     val soilType: String,
     val area: Double, // in acres
     val currentNPK: NPK,
@@ -1327,14 +1319,14 @@ sealed interface LoadingState<out T> {
 }
 
 // Usage in ViewModel
-private val _cropState = MutableStateFlow<LoadingState<List<Crop>>>(LoadingState.Idle)
-val cropState: StateFlow<LoadingState<List<Crop>>> = _cropState.asStateFlow()
+private val _diseaseState = MutableStateFlow<LoadingState<List<DiseaseAnalysis>>>(LoadingState.Idle)
+val diseaseState: StateFlow<LoadingState<List<DiseaseAnalysis>>> = _diseaseState.asStateFlow()
 
 // In Composable
-when (val state = uiState.cropState) {
+when (val state = uiState.diseaseState) {
     LoadingState.Idle -> { /* Initial state */ }
     LoadingState.Loading -> LoadingIndicator()
-    is LoadingState.Success -> CropList(state.data)
+    is LoadingState.Success -> DiseaseList(state.data)
     is LoadingState.Error -> ErrorMessage(state.message)
 }
 ```
@@ -1346,20 +1338,20 @@ when (val state = uiState.cropState) {
 ### Repository Error Handling
 
 ```kotlin
-class CropRepositoryImpl @Inject constructor(
-    private val remoteDataSource: CropRemoteDataSource,
-    private val localDataSource: CropLocalDataSource
-) : CropRepository {
+class DiseaseRepositoryImpl @Inject constructor(
+    private val remoteDataSource: DiseaseRemoteDataSource,
+    private val localDataSource: DiseaseLocalDataSource
+) : DiseaseRepository {
 
-    override suspend fun getCrops(): Result<List<Crop>> = try {
-        val crops = remoteDataSource.fetchCrops()
-        localDataSource.saveCrops(crops)
-        Result.success(crops)
+    override suspend fun getDiseaseAnalyses(): Result<List<DiseaseAnalysis>> = try {
+        val analyses = remoteDataSource.fetchAnalyses()
+        localDataSource.saveAnalyses(analyses)
+        Result.success(analyses)
     } catch (e: IOException) {
         // Network error, try cache
-        val cachedCrops = localDataSource.getCrops()
-        if (cachedCrops.isNotEmpty()) {
-            Result.success(cachedCrops)
+        val cachedAnalyses = localDataSource.getAnalyses()
+        if (cachedAnalyses.isNotEmpty()) {
+            Result.success(cachedAnalyses)
         } else {
             Result.failure(NetworkException("No internet and no cached data"))
         }
@@ -1510,7 +1502,7 @@ fun errorMessage_whenErrorExists_isDisplayed() {
 
 1. **UI Layer (100% Jetpack Compose)**
 
-   - HomeScreen with weather, quick actions, crop health display
+   - HomeScreen with weather and quick actions
    - ChatScreen with message list UI
    - FertilizerScreen with input form
    - SeedScanScreen with camera placeholder

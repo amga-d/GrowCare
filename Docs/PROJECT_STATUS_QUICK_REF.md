@@ -154,7 +154,7 @@ cd /home/amgad/Desktop/projects/GrowCare
   - [ ] Error handling
 
 - [ ] **Fertilizer Calculator**
-  - [ ] Fill form (crop, soil, area, yield)
+  - [ ] Fill form (soil, area, yield)
   - [ ] Form validation errors
   - [ ] Calculate NPK recommendation
   - [ ] Navigate to result screen
