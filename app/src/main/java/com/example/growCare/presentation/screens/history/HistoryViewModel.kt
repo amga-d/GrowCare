@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.growCare.domain.model.DiseaseAnalysis
 import com.example.growCare.domain.model.FertilizerRecommendation
 import com.example.growCare.domain.model.SeedQuality
+import com.example.growCare.domain.usecase.chat.DeleteChatUseCase
 import com.example.growCare.domain.usecase.chat.GetAllConversationsUseCase
+import com.example.growCare.domain.usecase.detection.DeleteDiseaseScanUseCase
+import com.example.growCare.domain.usecase.detection.DeleteSeedScanUseCase
 import com.example.growCare.domain.usecase.detection.GetDiseaseAnalysisByIdUseCase
 import com.example.growCare.domain.usecase.detection.GetDiseaseHistoryUseCase
 import com.example.growCare.domain.usecase.detection.GetSeedAnalysisByIdUseCase
 import com.example.growCare.domain.usecase.detection.GetSeedHistoryUseCase
+import com.example.growCare.domain.usecase.fertilizer.DeleteFertilizerUseCase
 import com.example.growCare.domain.usecase.fertilizer.GetFertilizerByIdUseCase
 import com.example.growCare.domain.usecase.fertilizer.GetFertilizerHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +29,11 @@ class HistoryViewModel @Inject constructor(
     private val getAllConversationsUseCase: GetAllConversationsUseCase,
     private val getDiseaseAnalysisByIdUseCase: GetDiseaseAnalysisByIdUseCase,
     private val getSeedAnalysisByIdUseCase: GetSeedAnalysisByIdUseCase,
-    private val getFertilizerByIdUseCase: GetFertilizerByIdUseCase
+    private val getFertilizerByIdUseCase: GetFertilizerByIdUseCase,
+    private val deleteChatUseCase: DeleteChatUseCase,
+    private val deleteDiseaseScanUseCase: DeleteDiseaseScanUseCase,
+    private val deleteSeedScanUseCase: DeleteSeedScanUseCase,
+    private val deleteFertilizerUseCase: DeleteFertilizerUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HistoryUiState())
@@ -106,6 +114,22 @@ class HistoryViewModel @Inject constructor(
                     error = e.message ?: "Failed to load history"
                 )}
             }
+        }
+    }
+
+    fun deleteHistoryItem(item: HistoryItem) {
+        viewModelScope.launch {
+            val result = when (item.type) {
+                HistoryType.CHAT -> deleteChatUseCase(item.id)
+                HistoryType.DISEASE -> deleteDiseaseScanUseCase(item.id)
+                HistoryType.SEED -> deleteSeedScanUseCase(item.id)
+                HistoryType.FERTILIZER -> deleteFertilizerUseCase(item.id)
+            }
+
+            result.onFailure { error ->
+                _uiState.update { it.copy(error = error.message ?: "Failed to delete item") }
+            }
+            // On success, the flows in loadHistory() will automatically emit new values
         }
     }
 

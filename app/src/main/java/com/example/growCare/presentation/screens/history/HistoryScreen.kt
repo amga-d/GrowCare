@@ -41,9 +41,34 @@ fun HistoryScreen(
     
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("All", "Disease", "Seeds", "Fertilizer", "Chat")
+    
+    var itemToDelete by remember { mutableStateOf<HistoryItem?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.loadHistory()
+    }
+
+    if (itemToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            title = { Text("Delete History") },
+            text = { Text("Are you sure you want to delete this item? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        itemToDelete?.let { viewModel.deleteHistoryItem(it) }
+                        itemToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -165,7 +190,8 @@ fun HistoryScreen(
                                         HistoryType.FERTILIZER -> onNavigateToFertilizerResult(item.id)
                                         HistoryType.CHAT -> onNavigateToChat(item.id)
                                     }
-                                }
+                                },
+                                onDelete = { itemToDelete = item }
                             )
                         }
                     }
@@ -178,7 +204,8 @@ fun HistoryScreen(
 @Composable
 fun HistoryCard(
     item: HistoryItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val primaryGreen = MaterialTheme.colorScheme.primary
     
@@ -237,12 +264,14 @@ fun HistoryCard(
                 )
             }
 
-            // Arrow
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Delete Button
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
