@@ -4,7 +4,7 @@
 
 ## 📋 Overview
 
-**Live my Leaf** is a revolutionary smart assistant for farmers that transforms smartphone cameras into powerful agricultural diagnostic tools. Designed to help 500M farmers who lose half of their harvest to invisible threats, Live my Leaf leverages advanced AI technology powered by Google Gemini to detect, predict, and prevent crop problems before they become disasters.
+**GrowCare** is a revolutionary smart assistant for farmers that transforms smartphone cameras into powerful agricultural diagnostic tools. Designed to help 500M farmers who lose half of their harvest to invisible threats, Live my Leaf leverages advanced AI technology powered by Google Gemini to detect, predict, and prevent crop problems before they become disasters.
 
 ### Our Solution
 
