@@ -1,4 +1,4 @@
-# 🌾Live my Leaf - AI-Powered Smart Agriculture Assistant
+# 🌾GrowCare - AI-Powered Smart Agriculture Assistant
 
 > Making invisible agricultural threats visible and preventable.
 
