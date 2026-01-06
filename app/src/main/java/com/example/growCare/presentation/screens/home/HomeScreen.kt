@@ -224,14 +224,14 @@ fun HeaderSection(
         }
         
         // Notification Icon
-        IconButton(onClick = { /* TODO */ }) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifications",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-        }
+//        IconButton(onClick = { /* TODO */ }) {
+//            Icon(
+//                imageVector = Icons.Default.Notifications,
+//                contentDescription = "Notifications",
+//                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+//                modifier = Modifier.size(24.dp)
+//            )
+//        }
     }
 }
 
